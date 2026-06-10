@@ -57,5 +57,5 @@ test('paste failure -> still ok (text on clipboard), pasted=false, history saved
   const d = deps({ paste: vi.fn().mockResolvedValue(false) });
   const r = await runDictationCycle(audio, d);
   expect(r).toEqual({ ok: true, text: 'Hello world.', unformatted: false, pasted: false });
-  expect(d.saveHistory).toHaveBeenCalled();
+  expect(d.saveHistory).toHaveBeenCalledWith(expect.objectContaining({ formattedText: 'Hello world.', unformatted: false, llmProvider: 'anthropic' }));
 });
