@@ -10,5 +10,6 @@ export function buildFormatter(settings: Settings, keys: ApiKeyStore): Formatter
   const key = keys.get(settings.llmProvider);
   if (!key) return null;
   if (settings.llmProvider === 'anthropic') return new AnthropicFormatter(key, settings.llmModel, settings.systemPrompt);
-  return new OpenAIFormatter(key, settings.llmModel, settings.systemPrompt);
+  if (settings.llmProvider === 'openai') return new OpenAIFormatter(key, settings.llmModel, settings.systemPrompt);
+  return null;
 }
