@@ -17,7 +17,7 @@ export function pcmToWav(pcm: Int16Array, sampleRate: number): Buffer {
 export function pcmToMp3(pcm: Int16Array, sampleRate: number, kbps = 32): Buffer {
   const enc = new Mp3Encoder(1, sampleRate, kbps);
   const chunks: Buffer[] = [];
-  for (let i = 0; i < pcm.length; i += 1152) {
+  for (let i = 0; i < pcm.length; i += 1152) { // 1152 = MPEG-1 Layer III frame size in samples
     const out = enc.encodeBuffer(pcm.subarray(i, i + 1152));
     if (out.length) chunks.push(Buffer.from(out.buffer, out.byteOffset, out.byteLength));
   }
@@ -26,7 +26,14 @@ export function pcmToMp3(pcm: Int16Array, sampleRate: number, kbps = 32): Buffer
   return Buffer.concat(chunks);
 }
 
-/** Split PCM at the quietest 100ms window near each required cut point. */
+/**
+ * Split PCM at the quietest 100ms window near each required cut point.
+ *
+ * Returns subarray views of the input — callers must not mutate the source PCM
+ * after calling this function.  When no quiet window exists within the search
+ * range (e.g. the remaining audio is shorter than the 100ms window), the
+ * function falls back to a hard cut at the ideal boundary.
+ */
 export function splitOnSilence(
   pcm: Int16Array, sampleRate: number, opts: { maxPartSamples: number },
 ): Int16Array[] {
@@ -53,7 +60,13 @@ export function splitOnSilence(
 
 export interface UploadPart { data: Buffer; mime: string; filename: string }
 
-/** WAV when it fits the provider limit; otherwise MP3, chunked on silence if still too big. */
+/**
+ * WAV when it fits the provider limit; otherwise MP3, chunked on silence if still too big.
+ *
+ * The 0.9 safety factor when computing maxPartSamples accounts for the fact
+ * that MP3 bitrate varies slightly with audio content, so we target 90% of
+ * the byte limit to avoid a re-encoded chunk accidentally exceeding it.
+ */
 export function prepareUploads(pcm: Int16Array, sampleRate: number, maxBytes: number): UploadPart[] {
   const wav = pcmToWav(pcm, sampleRate);
   if (wav.length <= maxBytes) return [{ data: wav, mime: 'audio/wav', filename: 'audio.wav' }];

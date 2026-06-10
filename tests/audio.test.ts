@@ -41,6 +41,12 @@ describe('splitOnSilence', () => {
     const parts = splitOnSilence(tone(1), 16000, { maxPartSamples: 16000 * 60 });
     expect(parts).toHaveLength(1);
   });
+  test('splitOnSilence terminates with hard cuts on degenerate input (shorter than search window)', () => {
+    const pcm = new Int16Array(1000).fill(8000); // 62ms @16k, no silence anywhere
+    const parts = splitOnSilence(pcm, 16000, { maxPartSamples: 400 });
+    expect(parts.length).toBe(3); // 400 + 400 + 200 hard cuts
+    expect(parts.reduce((n, p) => n + p.length, 0)).toBe(1000);
+  });
 });
 
 describe('prepareUploads', () => {
