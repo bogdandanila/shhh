@@ -1,4 +1,4 @@
-import { clipboard } from 'electron';
+import { app, clipboard } from 'electron';
 import { ShhhStore } from '../core/store';
 import { ApiKeyStore } from '../core/api-keys';
 import { runDictationCycle } from '../core/pipeline';
@@ -73,7 +73,10 @@ export async function wireSession(w: Wiring): Promise<() => Promise<PermissionSt
   };
 
   const settings = w.store.getSettings();
-  initInputMonitoring(w.store.getFlag('inputMonitoringSeen'), () => w.store.setFlag('inputMonitoringSeen', true));
+  // Version-scoped: each release re-signs the bundle (ad-hoc), which invalidates the
+  // TCC Input Monitoring grant — a cached "verified" from an older build would mask it.
+  const imFlag = `inputMonitoringSeen:${app.getVersion()}`;
+  initInputMonitoring(w.store.getFlag(imFlag), () => w.store.setFlag(imFlag, true));
   const listener = new KeyListener(resolveHotkeyCode(settings.hotkey), onDown, () => void onUp(), markInputMonitoringWorking);
   listener.start();
 
