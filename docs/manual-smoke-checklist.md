@@ -2,8 +2,8 @@
 
 Run on a real Mac before tagging a release. Items 1–6 are also the Task 15 verification.
 
-1. **First-run setup**: delete `~/Library/Application Support/shhh`, launch app → setup window appears; all three permissions grantable; restart button appears when done.
-2. **fn key**: `SHHH_KEY_DEBUG=1` launch → fn down/up logs the configured keycode; no double-fires on key repeat.
+1. **First-run setup**: delete `~/Library/Application Support/shhh`, launch app → setup window appears; all three permissions grantable; window closes itself once all verified (restart button offered while Input Monitoring is pending).
+2. **Hotkey (right ⌘)**: `SHHH_KEY_DEBUG=1` launch → right ⌘ down logs keycode 3676; no double-fires on key repeat. (fn is not observable via uiohook — rcmd is the default.)
 3. **Configure via CLI**: model download + stt provider set works; `shhh doctor` all green.
 4. **Dictation into TextEdit**: hold-speak-release → listening overlay (with timer) → processing → correct text pasted; previous clipboard contents restored.
 5. **History panel**: click overlay → entries present; click-to-copy works; search filters.

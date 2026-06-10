@@ -84,7 +84,7 @@ test('nuke hard-deletes history rows (not just tombstones) and resets hotkey/max
   deps.store.insertHistory({ rawText: 'x', formattedText: 'x', sttProvider: '', sttModel: '', llmProvider: 'none', llmModel: '', durationMs: 1, unformatted: true });
   await h.nuke({});
   const settings = deps.store.getSettings();
-  expect(settings.hotkey).toBe('fn');
+  expect(settings.hotkey).toBe('rcmd');
   expect(settings.maxRecordingMs).toBe(600_000);
   // history rows physically deleted
   expect(deps.store.countAllForTest()).toBe(0);

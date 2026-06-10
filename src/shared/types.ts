@@ -6,7 +6,7 @@ export interface Settings {
   sttModel: string;            // local model name (e.g. "base.en") or cloud model id
   llmProvider: LlmProvider;
   llmModel: string;
-  hotkey: string;              // "fn" or a uiohook keycode as string
+  hotkey: string;              // named key (rcmd, lalt, …) or a uiohook keycode as string
   maxRecordingMs: number;
   historyRetentionMs: number | null;  // null = keep forever
   loginLaunch: boolean;

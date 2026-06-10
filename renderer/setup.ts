@@ -14,7 +14,7 @@ async function refresh(): Promise<void> {
   const restart = document.getElementById('restart') as HTMLButtonElement;
   if (st.microphone && st.accessibility && st.inputMonitoring) {
     restart.style.display = 'none';
-    hint.textContent = 'All set — shhh is ready. Hold your hotkey to dictate.';
+    hint.textContent = 'All set — shhh is ready. Hold right ⌘ to dictate.';
     if (!closing) { closing = true; setTimeout(() => window.close(), 1500); }
   } else if (st.microphone && st.accessibility) {
     // Input Monitoring has no query API: it verifies the first time a key event arrives.

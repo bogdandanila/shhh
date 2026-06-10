@@ -28,7 +28,7 @@ describe('defaults', () => {
     expect(DEFAULT_SETTINGS.sttProvider).toBe('unset');
     expect(DEFAULT_SETTINGS.llmProvider).toBe('none');
     expect(DEFAULT_SETTINGS.maxRecordingMs).toBe(600_000);
-    expect(DEFAULT_SETTINGS.hotkey).toBe('fn');
+    expect(DEFAULT_SETTINGS.hotkey).toBe('rcmd');
     expect(DEFAULT_SETTINGS.systemPrompt.length).toBeGreaterThan(50);
   });
 });

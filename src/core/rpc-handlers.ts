@@ -105,7 +105,7 @@ export function buildHandlers(deps: HandlerDeps): Handlers {
       store.wipeHistory();
       store.patchSettings({
         sttProvider: 'unset', sttModel: '', llmProvider: 'none', llmModel: '', systemPrompt: DEFAULT_SYSTEM_PROMPT,
-        hotkey: 'fn', maxRecordingMs: 600_000, historyRetentionMs: null, loginLaunch: false,
+        hotkey: 'rcmd', maxRecordingMs: 600_000, historyRetentionMs: null, loginLaunch: false,
       });
       return 'ok';
     },
