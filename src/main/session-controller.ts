@@ -78,7 +78,8 @@ export async function wireSession(w: Wiring): Promise<() => Promise<PermissionSt
   listener.start();
 
   const perms = await checkPermissions();
-  if (!allGranted(perms)) openSetupWindow();
+  const sttReady = buildTranscriber(settings, w.apiKeys, w.dataDir) !== null;
+  if (!allGranted(perms) || !sttReady) openSetupWindow({ store: w.store, apiKeys: w.apiKeys, dataDir: w.dataDir });
 
   return checkPermissions;
 }

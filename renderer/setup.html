@@ -1,16 +1,46 @@
 <!doctype html>
 <html><head><meta charset="utf-8"><style>
   body { font: 14px -apple-system, sans-serif; margin: 24px; }
-  .perm { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid #eee; }
+  h3 { margin: 0 0 4px; }
+  h3 + h3, #stt { margin-top: 20px; }
+  .perm { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #eee; }
   .perm button { margin-left: auto; }
+  .row { padding: 8px 0 4px; }
+  .indent { margin: 0 0 8px 24px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .indent input[type="text"], .indent input[type="password"] { flex: 1 1 140px; min-width: 120px; }
+  #stt-summary { display: none; align-items: center; gap: 10px; padding: 10px 0; }
+  #local-prog { width: 100%; display: none; }
+  #stt-error { color: #c00; min-height: 1.2em; margin: 4px 0 0; font-size: 12px; }
+  .note { color: #888; font-size: 12px; }
   #hint { color: #666; min-height: 2.6em; margin: 12px 0 0; }
   #restart { width: 100%; padding: 10px; display: none; }
 </style></head>
 <body>
-  <h3>shhh needs three permissions</h3>
+  <h3>1. Permissions</h3>
   <div class="perm" data-k="microphone"><span class="state">⬜</span> 🎤 Microphone <button>Request</button></div>
   <div class="perm" data-k="inputMonitoring"><span class="state">⬜</span> ⌨️ Input Monitoring <button>Open Settings</button></div>
   <div class="perm" data-k="accessibility"><span class="state">⬜</span> ♿ Accessibility <button>Open Settings</button></div>
+
+  <h3 style="margin-top:20px">2. Speech-to-text</h3>
+  <div id="stt-summary"><span class="state">✅</span> <span id="stt-current"></span> <button id="stt-change" style="margin-left:auto">Change</button></div>
+  <div id="stt-form">
+    <div class="row"><label><input type="radio" name="sttmode" value="local" checked> <b>Local Whisper</b> — private, runs on this Mac, no API key</label></div>
+    <div class="indent" id="local-opts">
+      <select id="local-model"></select>
+      <button id="local-go">Download &amp; use</button>
+      <progress id="local-prog" max="100" value="0"></progress>
+    </div>
+    <div class="row"><label><input type="radio" name="sttmode" value="cloud"> <b>Cloud API</b> — your own key, faster on older Macs</label></div>
+    <div class="indent" id="cloud-opts" style="display:none">
+      <select id="cloud-provider"><option value="openai">OpenAI</option><option value="groq">Groq</option><option value="deepgram">Deepgram</option></select>
+      <input id="cloud-model" type="text">
+      <input id="cloud-key" type="password" placeholder="API key (stored in macOS Keychain)">
+      <button id="cloud-go">Save</button>
+    </div>
+    <div class="note">Optional cleanup pass (filler-word removal) can be added later: <code>shhh config set llm.provider anthropic</code></div>
+  </div>
+  <div id="stt-error"></div>
+
   <p id="hint"></p>
   <button id="restart">Restart shhh</button>
   <script type="module" src="setup.js"></script>

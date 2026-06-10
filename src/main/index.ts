@@ -35,7 +35,7 @@ app.whenReady().then(async () => {
 
   const rpc = new RpcServer(socketPath(), {
     ...buildHandlers({ store, apiKeys, dataDir: dir, checkPermissions, appVersion: app.getVersion() }),
-    'setup.open': async () => { (await import('./setup-window')).openSetupWindow(); return 'ok'; },
+    'setup.open': async () => { (await import('./setup-window')).openSetupWindow({ store, apiKeys, dataDir: dir }); return 'ok'; },
   });
   await rpc.listen();
 });

@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
-const ALLOWED_INVOKE = ['history:list', 'history:copy', 'perm:status', 'perm:request', 'perm:openSettings', 'app:restart'];
-const ALLOWED_ON = ['overlay:state', 'rec:cmd'];
+const ALLOWED_INVOKE = ['history:list', 'history:copy', 'perm:status', 'perm:request', 'perm:openSettings', 'app:restart', 'stt:status', 'stt:useLocal', 'stt:useCloud'];
+const ALLOWED_ON = ['overlay:state', 'rec:cmd', 'stt:progress'];
 
 contextBridge.exposeInMainWorld('shhh', {
   invoke: (ch: string, ...args: unknown[]) => {
