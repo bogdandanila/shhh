@@ -51,7 +51,7 @@ export class ShhhStore {
     const out = { ...DEFAULT_SETTINGS } as Settings;
     for (const k of Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[]) {
       const v = this.rawGet(k);
-      if (v !== undefined) (out as Record<string, unknown>)[k] = JSON.parse(v);
+      if (v !== undefined) (out as unknown as Record<string, unknown>)[k] = JSON.parse(v);
     }
     return out;
   }
