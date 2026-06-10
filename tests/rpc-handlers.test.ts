@@ -1,0 +1,70 @@
+import { beforeEach, expect, test } from 'vitest';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { randomBytes } from 'node:crypto';
+import { buildHandlers, HandlerDeps } from '../src/core/rpc-handlers';
+import { ShhhStore } from '../src/core/store';
+import { InMemoryApiKeyStore } from '../src/core/api-keys';
+import { DEFAULT_SYSTEM_PROMPT } from '../src/core/formatter/default-prompt';
+
+let deps: HandlerDeps;
+let h: ReturnType<typeof buildHandlers>;
+
+beforeEach(() => {
+  deps = {
+    store: new ShhhStore(join(mkdtempSync(join(tmpdir(), 'shhh-')), 'db'), randomBytes(32).toString('hex')),
+    apiKeys: new InMemoryApiKeyStore(),
+    dataDir: mkdtempSync(join(tmpdir(), 'shhh-')),
+    checkPermissions: async () => ({ microphone: true, accessibility: false, inputMonitoring: false }),
+    appVersion: '0.1.0',
+  };
+  h = buildHandlers(deps);
+});
+
+test('config.set/get with secret redaction', async () => {
+  await h['config.set']({ key: 'stt.provider', value: 'openai' });
+  await h['config.set']({ key: 'openai.api-key', value: 'sk-proj-abcdefgh1234' });
+  const cfg = (await h['config.get']({})) as Record<string, string>;
+  expect(cfg['stt.provider']).toBe('openai');
+  expect(cfg['openai.api-key']).toBe('sk-proj…1234');     // redacted
+  expect(deps.apiKeys.get('openai')).toBe('sk-proj-abcdefgh1234'); // stored for real
+});
+
+test('config.set validates durations and providers', async () => {
+  await h['config.set']({ key: 'max-recording', value: '30m' });
+  expect(deps.store.getSettings().maxRecordingMs).toBe(1_800_000);
+  await expect(h['config.set']({ key: 'stt.provider', value: 'bogus' })).rejects.toThrow();
+});
+
+test('prompt.get/set/reset', async () => {
+  expect(await h['prompt.get']({})).toBe(DEFAULT_SYSTEM_PROMPT);
+  await h['prompt.set']({ prompt: 'Custom prompt here' });
+  expect(await h['prompt.get']({})).toBe('Custom prompt here');
+  await h['prompt.reset']({});
+  expect(await h['prompt.get']({})).toBe(DEFAULT_SYSTEM_PROMPT);
+});
+
+test('history.list / history.get / history.clear', async () => {
+  deps.store.insertHistory({ rawText: 'a', formattedText: 'A.', sttProvider: 'local', sttModel: '', llmProvider: 'none', llmModel: '', durationMs: 1, unformatted: true });
+  const list = (await h['history.list']({ limit: 5 })) as { id: string }[];
+  expect(list).toHaveLength(1);
+  expect(((await h['history.get']({ id: list[0].id })) as { formattedText: string }).formattedText).toBe('A.');
+  await h['history.clear']({});
+  expect(await h['history.list']({ limit: 5 })).toEqual([]);
+});
+
+test('status and doctor report configuration state', async () => {
+  const status = (await h.status({})) as Record<string, unknown>;
+  expect(status).toMatchObject({ version: '0.1.0', sttConfigured: false, llmConfigured: false });
+  const doc = (await h.doctor({})) as Record<string, unknown>;
+  expect(doc).toMatchObject({ microphone: true, accessibility: false });
+});
+
+test('nuke wipes settings, history, and keys', async () => {
+  deps.apiKeys.set('anthropic', 'k');
+  deps.store.insertHistory({ rawText: 'x', formattedText: 'x', sttProvider: '', sttModel: '', llmProvider: 'none', llmModel: '', durationMs: 1, unformatted: true });
+  await h.nuke({});
+  expect(deps.apiKeys.providersWithKeys()).toEqual([]);
+  expect(await h['history.list']({ limit: 5 })).toEqual([]);
+});
