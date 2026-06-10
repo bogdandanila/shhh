@@ -8,12 +8,12 @@
   .row { padding: 8px 0 4px; }
   .indent { margin: 0 0 8px 24px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .indent input[type="text"], .indent input[type="password"] { flex: 1 1 140px; min-width: 120px; }
-  #stt-summary { display: none; align-items: center; gap: 10px; padding: 10px 0; }
+  #stt-summary, #llm-summary { display: none; align-items: center; gap: 10px; padding: 10px 0; }
   #local-prog { width: 100%; display: none; }
-  #stt-error { color: #c00; min-height: 1.2em; margin: 4px 0 0; font-size: 12px; }
+  .err { color: #c00; min-height: 1.2em; margin: 4px 0 0; font-size: 12px; }
   .note { color: #888; font-size: 12px; }
   #hint { color: #666; min-height: 2.6em; margin: 12px 0 0; }
-  #restart { width: 100%; padding: 10px; display: none; }
+  #restart, #done { width: 100%; padding: 10px; display: none; }
 </style></head>
 <body>
   <h3>1. Permissions</h3>
@@ -37,11 +37,24 @@
       <input id="cloud-key" type="password" placeholder="API key (stored in macOS Keychain)">
       <button id="cloud-go">Save</button>
     </div>
-    <div class="note">Optional cleanup pass (filler-word removal) can be added later: <code>shhh config set llm.provider anthropic</code></div>
   </div>
-  <div id="stt-error"></div>
+  <div id="stt-error" class="err"></div>
+
+  <h3 style="margin-top:20px">3. Formatting <span class="note">(optional)</span></h3>
+  <div id="llm-summary"><span class="state">✅</span> <span id="llm-current"></span> <button id="llm-change" style="margin-left:auto">Change</button> <button id="llm-off">Disable</button></div>
+  <div id="llm-form">
+    <div class="note">An LLM pass that strips filler words ("uhm…") and fixes punctuation. Skip it and shhh pastes the raw transcription as-is.</div>
+    <div class="indent" style="margin-left:0;margin-top:8px">
+      <select id="llm-provider"><option value="anthropic">Anthropic</option><option value="openai">OpenAI</option></select>
+      <input id="llm-model" type="text">
+      <input id="llm-key" type="password" placeholder="API key (stored in macOS Keychain)">
+      <button id="llm-go">Save</button>
+    </div>
+  </div>
+  <div id="llm-error" class="err"></div>
 
   <p id="hint"></p>
   <button id="restart">Restart shhh</button>
+  <button id="done">Done</button>
   <script type="module" src="setup.js"></script>
 </body></html>

@@ -4,7 +4,7 @@ import { rendererDir } from './paths';
 import { checkPermissions, requestPermission } from './permissions';
 import { ShhhStore } from '../core/store';
 import { ApiKeyStore, KeyProvider } from '../core/api-keys';
-import { SttProvider } from '../shared/types';
+import { LlmProvider, SttProvider } from '../shared/types';
 import { WHISPER_MODELS, WhisperModelName, isModelPresent, downloadModel } from '../core/models';
 
 export interface SetupDeps { store: ShhhStore; apiKeys: ApiKeyStore; dataDir: string }
@@ -13,6 +13,7 @@ let win: BrowserWindow | null = null;
 let registered = false;
 
 const CLOUD_STT: SttProvider[] = ['openai', 'groq', 'deepgram'];
+const LLM_CLOUD: LlmProvider[] = ['anthropic', 'openai'];
 
 export function openSetupWindow(deps: SetupDeps): void {
   if (!registered) {
@@ -55,11 +56,34 @@ export function openSetupWindow(deps: SetupDeps): void {
       return 'ok';
     });
 
+    ipcMain.handle('llm:status', () => {
+      const s = deps.store.getSettings();
+      return {
+        provider: s.llmProvider, model: s.llmModel,
+        configured: s.llmProvider !== 'none' && !!s.llmModel && deps.apiKeys.get(s.llmProvider) !== null,
+      };
+    });
+
+    ipcMain.handle('llm:set', (_e, p: { provider: string; model: string; apiKey: string }) => {
+      if (!LLM_CLOUD.includes(p.provider as LlmProvider)) throw new Error(`Unknown provider: ${p.provider}`);
+      const model = p.model.trim(), apiKey = p.apiKey.trim();
+      if (!model || !apiKey) throw new Error('Model and API key are required');
+      deps.apiKeys.set(p.provider as KeyProvider, apiKey);
+      deps.store.patchSettings({ llmProvider: p.provider as LlmProvider, llmModel: model });
+      return 'ok';
+    });
+
+    // Flips settings only — the Keychain entry stays (remove with `shhh config set <provider>.api-key`… or nuke).
+    ipcMain.handle('llm:disable', () => {
+      deps.store.patchSettings({ llmProvider: 'none', llmModel: '' });
+      return 'ok';
+    });
+
     registered = true;
   }
   if (win && !win.isDestroyed()) { win.focus(); return; }
   win = new BrowserWindow({
-    width: 480, height: 600, title: 'Set up shhh', resizable: false,
+    width: 480, height: 720, title: 'Set up shhh', resizable: false,
     webPreferences: { preload: join(__dirname, 'preload.js') },
   });
   win.loadFile(join(rendererDir(), 'setup.html'));
