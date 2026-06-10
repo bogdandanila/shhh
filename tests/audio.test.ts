@@ -20,9 +20,9 @@ describe('pcmToWav', () => {
 });
 
 describe('pcmToMp3', () => {
-  test('encodes and is much smaller than WAV', () => {
+  test('encodes and is much smaller than WAV', async () => {
     const pcm = tone(2);
-    const mp3 = pcmToMp3(pcm, 16000);
+    const mp3 = await pcmToMp3(pcm, 16000);
     expect(mp3.length).toBeGreaterThan(0);
     expect(mp3.length).toBeLessThan(pcm.length * 2 * 0.5);
   });
@@ -50,11 +50,11 @@ describe('splitOnSilence', () => {
 });
 
 describe('prepareUploads', () => {
-  test('short audio -> one wav part; respects byte limit by chunking+mp3', () => {
-    const short = prepareUploads(tone(2), 16000, 25 * 1024 * 1024);
+  test('short audio -> one wav part; respects byte limit by chunking+mp3', async () => {
+    const short = await prepareUploads(tone(2), 16000, 25 * 1024 * 1024);
     expect(short).toHaveLength(1);
     expect(short[0].filename.endsWith('.wav')).toBe(true);
-    const tiny = prepareUploads(tone(10), 16000, 40_000); // force chunked mp3
+    const tiny = await prepareUploads(tone(10), 16000, 40_000); // force chunked mp3
     expect(tiny.length).toBeGreaterThan(1);
     expect(tiny[0].filename.endsWith('.mp3')).toBe(true);
   });

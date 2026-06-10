@@ -13,7 +13,7 @@ export class OpenAICompatibleSTT implements Transcriber {
   constructor(private opts: OpenAICompatibleOpts) {}
 
   async transcribe(audio: AudioData): Promise<string> {
-    const parts = prepareUploads(audio.pcm, audio.sampleRate, this.opts.maxUploadBytes ?? 24 * 1024 * 1024);
+    const parts = await prepareUploads(audio.pcm, audio.sampleRate, this.opts.maxUploadBytes ?? 24 * 1024 * 1024);
     const texts: string[] = [];
     for (const part of parts) {
       const form = new FormData();

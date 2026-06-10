@@ -1,4 +1,30 @@
-import { Mp3Encoder } from '@breezystack/lamejs';
+// TS compiles `import()` to require() under module:CommonJS, which can't load ESM packages.
+// Real CJS modules (Node/Electron) have `module.id` set to the file path; Vitest injects a
+// stub `module` object with only `exports` but no `id`.  When we detect a real CJS context
+// we route through Function() so the string literal `import(s)` is evaluated at runtime by
+// V8 as a genuine dynamic import rather than being downleveled to require() by tsc.
+/* eslint-disable @typescript-eslint/no-implied-eval */
+declare const module: { id?: string; exports: unknown } | undefined;
+const _isCJS = typeof module !== 'undefined' && typeof (module as any).id === 'string';
+// eslint-disable-next-line no-new-func
+const _dynamicImportCJS = _isCJS ? (new Function('s', 'return import(s)') as (s: string) => Promise<unknown>) : null;
+
+type LamejsModule = {
+  Mp3Encoder: new (channels: number, sampleRate: number, kbps: number) => {
+    encodeBuffer(pcm: Int16Array): Int8Array;
+    flush(): Int8Array;
+  };
+};
+let lamejsPromise: Promise<LamejsModule> | null = null;
+function loadLamejs(): Promise<LamejsModule> {
+  if (!lamejsPromise) {
+    lamejsPromise = (_isCJS
+      ? _dynamicImportCJS!('@breezystack/lamejs')
+      : import('@breezystack/lamejs')
+    ) as Promise<LamejsModule>;
+  }
+  return lamejsPromise;
+}
 
 export function pcmToWav(pcm: Int16Array, sampleRate: number): Buffer {
   const dataLen = pcm.length * 2;
@@ -14,7 +40,8 @@ export function pcmToWav(pcm: Int16Array, sampleRate: number): Buffer {
   return buf;
 }
 
-export function pcmToMp3(pcm: Int16Array, sampleRate: number, kbps = 32): Buffer {
+export async function pcmToMp3(pcm: Int16Array, sampleRate: number, kbps = 32): Promise<Buffer> {
+  const { Mp3Encoder } = await loadLamejs();
   const enc = new Mp3Encoder(1, sampleRate, kbps);
   const chunks: Buffer[] = [];
   for (let i = 0; i < pcm.length; i += 1152) { // 1152 = MPEG-1 Layer III frame size in samples
@@ -67,15 +94,15 @@ export interface UploadPart { data: Buffer; mime: string; filename: string }
  * that MP3 bitrate varies slightly with audio content, so we target 90% of
  * the byte limit to avoid a re-encoded chunk accidentally exceeding it.
  */
-export function prepareUploads(pcm: Int16Array, sampleRate: number, maxBytes: number): UploadPart[] {
+export async function prepareUploads(pcm: Int16Array, sampleRate: number, maxBytes: number): Promise<UploadPart[]> {
   const wav = pcmToWav(pcm, sampleRate);
   if (wav.length <= maxBytes) return [{ data: wav, mime: 'audio/wav', filename: 'audio.wav' }];
-  const mp3 = pcmToMp3(pcm, sampleRate);
+  const mp3 = await pcmToMp3(pcm, sampleRate);
   if (mp3.length <= maxBytes) return [{ data: mp3, mime: 'audio/mpeg', filename: 'audio.mp3' }];
   // mp3 bytes scale ~linearly with samples; chunk PCM so each part encodes under the limit
   const ratio = mp3.length / pcm.length;
   const maxPartSamples = Math.floor((maxBytes * 0.9) / ratio);
-  return splitOnSilence(pcm, sampleRate, { maxPartSamples }).map((p, i) => ({
-    data: pcmToMp3(p, sampleRate), mime: 'audio/mpeg', filename: `audio-${i}.mp3`,
-  }));
+  const parts = splitOnSilence(pcm, sampleRate, { maxPartSamples });
+  const encoded = await Promise.all(parts.map((p) => pcmToMp3(p, sampleRate)));
+  return encoded.map((data, i) => ({ data, mime: 'audio/mpeg', filename: `audio-${i}.mp3` }));
 }
