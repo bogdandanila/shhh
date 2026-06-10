@@ -29,6 +29,7 @@ export class ShhhStore {
   private db: Database.Database;
 
   constructor(dbPath: string, hexKey: string) {
+    if (!/^[0-9a-f]{64}$/i.test(hexKey)) throw new Error('Invalid DB key format');
     this.db = new Database(dbPath);
     this.db.pragma(`cipher='sqlcipher'`);
     this.db.pragma(`key="x'${hexKey}'"`);
@@ -36,6 +37,7 @@ export class ShhhStore {
     if (!this.rawGet('deviceId')) this.rawSet('deviceId', JSON.stringify(randomUUID()));
   }
 
+  // settings table stores all values JSON-encoded; rawSet/rawGet callers must keep that invariant
   private rawGet(key: string): string | undefined {
     const row = this.db.prepare('SELECT value FROM settings WHERE key=?').get(key) as { value: string } | undefined;
     return row?.value;
@@ -76,6 +78,16 @@ export class ShhhStore {
     return entry;
   }
 
+  private mapRow(r: Record<string, unknown>): HistoryEntry {
+    return {
+      id: r.id as string, rawText: r.raw_text as string, formattedText: r.formatted_text as string,
+      createdAt: r.created_at as string, updatedAt: r.updated_at as string, deletedAt: r.deleted_at as string | null,
+      deviceId: r.device_id as string, sttProvider: r.stt_provider as string, sttModel: r.stt_model as string,
+      llmProvider: r.llm_provider as string, llmModel: r.llm_model as string,
+      durationMs: r.duration_ms as number, unformatted: !!r.unformatted,
+    };
+  }
+
   listHistory(opts: { limit: number; search?: string }): HistoryEntry[] {
     const where = ['deleted_at IS NULL'];
     const params: Record<string, unknown> = { limit: opts.limit };
@@ -83,17 +95,15 @@ export class ShhhStore {
     const rows = this.db.prepare(
       `SELECT * FROM history WHERE ${where.join(' AND ')} ORDER BY created_at DESC, id DESC LIMIT @limit`,
     ).all(params) as Record<string, unknown>[];
-    return rows.map((r) => ({
-      id: r.id as string, rawText: r.raw_text as string, formattedText: r.formatted_text as string,
-      createdAt: r.created_at as string, updatedAt: r.updated_at as string, deletedAt: r.deleted_at as string | null,
-      deviceId: r.device_id as string, sttProvider: r.stt_provider as string, sttModel: r.stt_model as string,
-      llmProvider: r.llm_provider as string, llmModel: r.llm_model as string,
-      durationMs: r.duration_ms as number, unformatted: !!r.unformatted,
-    }));
+    return rows.map((r) => this.mapRow(r));
   }
 
   getHistoryById(id: string): HistoryEntry | null {
-    return this.listHistory({ limit: 100_000 }).find((e) => e.id === id || e.id.startsWith(id)) ?? null;
+    const exact = this.db.prepare('SELECT * FROM history WHERE id=? AND deleted_at IS NULL LIMIT 1').get(id);
+    if (exact) return this.mapRow(exact as Record<string, unknown>);
+    // prefix match — CLI short-id convenience
+    const pref = this.db.prepare("SELECT * FROM history WHERE id LIKE ? AND deleted_at IS NULL LIMIT 1").get(id + '%');
+    return pref ? this.mapRow(pref as Record<string, unknown>) : null;
   }
 
   clearHistory(): void {

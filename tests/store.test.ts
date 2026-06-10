@@ -63,4 +63,41 @@ describe('ShhhStore', () => {
     expect(s.listHistory({ limit: 10 })).toHaveLength(0);
     s.close();
   });
+
+  // Fix 1: defensive key validation
+  test('constructor throws on invalid hex key', () => {
+    expect(() => new ShhhStore(join(dir(), 'db'), 'not-hex')).toThrow(/Invalid DB key/);
+  });
+
+  // Fix 2: getHistoryById SQL fast/slow path
+  test('getHistoryById returns entry by exact id', () => {
+    const s = new ShhhStore(join(dir(), 'db'), key());
+    const e = s.insertHistory({ rawText: 'exact', formattedText: 'Exact.', sttProvider: 'local', sttModel: '', llmProvider: 'none', llmModel: '', durationMs: 1, unformatted: false });
+    expect(s.getHistoryById(e.id)).not.toBeNull();
+    expect(s.getHistoryById(e.id)!.rawText).toBe('exact');
+    s.close();
+  });
+
+  test('getHistoryById returns entry by 8-char prefix', () => {
+    const s = new ShhhStore(join(dir(), 'db'), key());
+    const e = s.insertHistory({ rawText: 'prefix', formattedText: 'Prefix.', sttProvider: 'local', sttModel: '', llmProvider: 'none', llmModel: '', durationMs: 1, unformatted: false });
+    const prefix = e.id.slice(0, 8);
+    expect(s.getHistoryById(prefix)).not.toBeNull();
+    expect(s.getHistoryById(prefix)!.rawText).toBe('prefix');
+    s.close();
+  });
+
+  test('getHistoryById returns null for tombstoned entry', () => {
+    const s = new ShhhStore(join(dir(), 'db'), key());
+    const e = s.insertHistory({ rawText: 'gone', formattedText: 'Gone.', sttProvider: 'local', sttModel: '', llmProvider: 'none', llmModel: '', durationMs: 1, unformatted: false });
+    s.clearHistory();
+    expect(s.getHistoryById(e.id)).toBeNull();
+    s.close();
+  });
+
+  test('getHistoryById returns null for unknown id', () => {
+    const s = new ShhhStore(join(dir(), 'db'), key());
+    expect(s.getHistoryById('00000000-0000-0000-0000-000000000000')).toBeNull();
+    s.close();
+  });
 });
