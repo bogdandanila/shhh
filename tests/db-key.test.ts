@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { mkdtempSync, readFileSync, statSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { loadOrCreateDbKey, StringEncryptor } from '../src/core/db-key';
@@ -24,4 +24,28 @@ test('second call returns the same key', () => {
   const a = loadOrCreateDbKey(dir, fakeEnc);
   const b = loadOrCreateDbKey(dir, fakeEnc);
   expect(b).toBe(a);
+});
+
+// Fix 1 — enforce mode 600 on load path
+test('heals weak permissions: chmod 644 then load restores mode to 600 and key is unchanged', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'shhh-'));
+  const file = join(dir, 'db.key.enc');
+  const key = loadOrCreateDbKey(dir, fakeEnc);
+  chmodSync(file, 0o644);
+  expect(statSync(file).mode & 0o777).toBe(0o644); // confirm weakened
+  const key2 = loadOrCreateDbKey(dir, fakeEnc);
+  expect(statSync(file).mode & 0o777).toBe(0o600); // healed
+  expect(key2).toBe(key); // same key returned
+});
+
+// Fix 2 — clear error on decrypt failure
+test('throws a clear message when decrypt fails (corrupt file / changed signature)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'shhh-'));
+  const file = join(dir, 'db.key.enc');
+  writeFileSync(file, Buffer.from('garbage'), { mode: 0o600 });
+  const brokenEnc: StringEncryptor = {
+    encrypt: fakeEnc.encrypt,
+    decrypt: () => { throw new Error('decryption failed'); },
+  };
+  expect(() => loadOrCreateDbKey(dir, brokenEnc)).toThrow(/unlock the database key/);
 });
