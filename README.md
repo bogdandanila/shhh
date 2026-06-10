@@ -65,7 +65,12 @@ then reopen the app and grant permissions normally. (Recent shhh builds detect t
 
 ### Updating
 
-Repeat the download/install steps with the new version's zip. macOS resets permission grants for unsigned apps on update, so the setup window will reopen — re-toggle Input Monitoring and Accessibility, ~30 seconds.
+Repeat the download/install steps with the new version's zip. Because the app's (ad-hoc) signature changes with each release, macOS treats an update as a new app, so expect two one-time prompts:
+
+- the setup window reopens to re-grant Input Monitoring and Accessibility (~30 seconds);
+- Keychain asks for your password to let shhh read **"shhh Safe Storage"** — that item protects the encryption key for your local history database. Enter your password and click *Always Allow*.
+
+Both go away permanently if/when shhh ships with an Apple Developer certificate.
 
 ## CLI (optional, power users)
 
