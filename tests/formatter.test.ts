@@ -25,6 +25,7 @@ test('second attempt can succeed', async () => {
   const format = vi.fn().mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce('Clean text here.');
   const r = await runFormatter({ format }, raw);
   expect(r.unformatted).toBe(false);
+  expect(r.text).toBe('Clean text here.');
 });
 
 test('insane output (empty / wild length) falls back to raw', async () => {
@@ -32,6 +33,8 @@ test('insane output (empty / wild length) falls back to raw', async () => {
   expect(isSaneOutput(raw, 'a'.repeat(raw.length * 5))).toBe(false);
   expect(isSaneOutput(raw, 'ok')).toBe(false); // < 20% of input length
   expect(isSaneOutput(raw, 'This is a test of the dictation system.')).toBe(true);
-  const r = await runFormatter({ format: async () => '' }, raw);
+  const format = vi.fn().mockResolvedValue('');
+  const r = await runFormatter({ format }, raw);
+  expect(format).toHaveBeenCalledTimes(2);
   expect(r).toEqual({ text: raw, unformatted: true });
 });
