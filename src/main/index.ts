@@ -43,10 +43,15 @@ app.whenReady().then(async () => {
   const recorder = new RecorderWindow();
   const history = new HistoryWindow(store);
   overlay.onClick(() => history.toggle());
-  tray = createTray({
-    onHistory: () => history.toggle(),
-    onSetup: () => void import('./setup-window').then((m) => m.openSetupWindow({ store, apiKeys, dataDir: dir })),
-  });
+  try {
+    tray = createTray({
+      onHistory: () => history.toggle(),
+      onSetup: () => void import('./setup-window').then((m) => m.openSetupWindow({ store, apiKeys, dataDir: dir })),
+    });
+  } catch (e) {
+    // A missing menu-bar icon must never take the hotkey/RPC wiring down with it.
+    console.error('tray creation failed:', e);
+  }
 
   const { wireSession } = await import('./session-controller');
   const checkPermissions = await wireSession({ store, apiKeys, overlay, recorder, dataDir: dir });

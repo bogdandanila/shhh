@@ -4,7 +4,7 @@ import { rendererDir } from './paths';
 import { AudioData } from '../shared/types';
 import type { IpcMainEvent } from 'electron';
 
-/** Hidden renderer that owns getUserMedia; kept warm for <50ms start. */
+/** Hidden renderer that owns getUserMedia; the mic is acquired per recording, never held idle. */
 export class RecorderWindow {
   private win: BrowserWindow;
 

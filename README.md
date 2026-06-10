@@ -15,7 +15,7 @@ A 🤫 icon in the menu bar gives you dictation history (searchable, click-to-co
 
 ## Privacy & security
 
-- **Local-first**: with local Whisper, audio never leaves your Mac. Audio lives only in memory and is zeroed after transcription — never written to disk.
+- **Local-first**: with local Whisper, audio never leaves your Mac. Audio lives only in memory and is zeroed after transcription — never written to disk. The microphone is only open while you hold the dictation key (watch the macOS orange mic indicator).
 - **Your keys, your prompts**: all providers are opt-in with your own API keys. The LLM system prompt is fully editable. No accounts, no telemetry, no middleman servers — cloud calls (if you opt in) go directly from your Mac to the provider.
 - **Encrypted at rest**: dictation history is stored in a SQLCipher (AES-256) database; the database key is protected by the macOS Keychain. API keys are individual Keychain items, never stored in the database or logs.
 - **Nothing is used for training**: there's no backend. What providers do is governed by your own agreement with them (both Anthropic and OpenAI APIs don't train on API traffic by default).
@@ -29,7 +29,7 @@ A 🤫 icon in the menu bar gives you dictation history (searchable, click-to-co
 
 ```sh
 curl -L -o /tmp/shhh.zip \
-  https://github.com/bogdandanila/shhh/releases/latest/download/shhh-0.1.1-universal-mac.zip
+  https://github.com/bogdandanila/shhh/releases/latest/download/shhh-0.1.2-universal-mac.zip
 curl -sL https://github.com/bogdandanila/shhh/releases/latest/download/checksums.txt
 shasum -a 256 /tmp/shhh.zip   # must match the line printed above
 ```
