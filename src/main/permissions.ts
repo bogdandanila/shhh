@@ -14,10 +14,18 @@ export async function checkPermissions(): Promise<PermissionStatus> {
   };
 }
 
+let axPromptShown = false;
+
 export async function requestPermission(which: keyof typeof PANES): Promise<void> {
   if (which === 'microphone') { await systemPreferences.askForMediaAccess('microphone'); return; }
-  // isTrustedAccessibilityClient(true) triggers the system prompt; the deep link below opens the exact Settings pane
-  systemPreferences.isTrustedAccessibilityClient(true);
+  // First click: the system prompt registers shhh in the Accessibility list and has
+  // its own "Open System Settings" button — opening the pane too would double up.
+  // Later clicks (prompt no longer shows): deep-link straight to the pane.
+  if (!axPromptShown) {
+    axPromptShown = true;
+    systemPreferences.isTrustedAccessibilityClient(true);
+    return;
+  }
   await shell.openExternal(PANES[which]);
 }
 

@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import { join } from 'node:path';
 import { rendererDir } from './paths';
 import { checkPermissions, requestPermission } from './permissions';
@@ -18,7 +18,15 @@ const LLM_CLOUD: LlmProvider[] = ['anthropic', 'openai'];
 export function openSetupWindow(deps: SetupDeps): void {
   if (!registered) {
     ipcMain.handle('perm:status', () => checkPermissions());
-    ipcMain.handle('perm:request', (_e, which) => requestPermission(which));
+    ipcMain.handle('perm:request', async (_e, which) => {
+      await requestPermission(which);
+      // Dismissing the system mic dialog drops accessory-app windows behind
+      // everything — bring setup back so the user can continue.
+      if (which === 'microphone' && win && !win.isDestroyed()) {
+        app.focus({ steal: true });
+        win.focus();
+      }
+    });
 
     ipcMain.handle('stt:status', () => {
       const s = deps.store.getSettings();
