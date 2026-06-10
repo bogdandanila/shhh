@@ -97,3 +97,7 @@ SHHH_KEY_DEBUG=1 npx electron .  # log keycodes (for picking a custom hotkey)
 ```
 
 Native modules can only target one ABI at a time: `npm run rebuild:node` before `npm test`, `npm run rebuild:electron` before running/packaging the app.
+
+## License
+
+[MIT](LICENSE)
