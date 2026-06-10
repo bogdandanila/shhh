@@ -28,14 +28,18 @@ export class KeychainApiKeyStore implements ApiKeyStore {
 
 export class InMemoryApiKeyStore implements ApiKeyStore {
   private m = new Map<KeyProvider, string>();
-  get(p: KeyProvider) { return this.m.get(p) ?? null; }
-  set(p: KeyProvider, k: string) { this.m.set(p, k); }
-  delete(p: KeyProvider) { this.m.delete(p); }
+  get(provider: KeyProvider) { return this.m.get(provider) ?? null; }
+  set(provider: KeyProvider, key: string) { this.m.set(provider, key); }
+  delete(provider: KeyProvider) { this.m.delete(provider); }
   providersWithKeys() { return [...this.m.keys()]; }
 }
 
-/** Never print full keys anywhere. "sk-ant-…7f2k" style. */
+/**
+ * Redact an API key for display: never reveal more than ~half the key.
+ * ≤4 chars: fully hidden. ≤16: 2-char prefix/suffix. Longer: 7-char prefix + 4-char suffix.
+ */
 export function redactKey(key: string): string {
-  if (key.length <= 8) return '…';
+  if (!key || key.length <= 4) return '…';
+  if (key.length <= 16) return `${key.slice(0, 2)}…${key.slice(-2)}`;
   return `${key.slice(0, 7)}…${key.slice(-4)}`;
 }
