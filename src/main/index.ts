@@ -9,6 +9,9 @@ import { buildHandlers } from '../core/rpc-handlers';
 import { OverlayWindow } from './overlay-window';
 import { RecorderWindow } from './recorder-window';
 import { HistoryWindow } from './history-window';
+import { createTray } from './tray';
+
+let tray: Electron.Tray | null = null; // module-level: Tray must outlive whenReady or GC removes the icon
 
 if (!app.requestSingleInstanceLock()) app.quit();
 app.dock?.hide(); // background app: no dock icon
@@ -29,6 +32,10 @@ app.whenReady().then(async () => {
   const recorder = new RecorderWindow();
   const history = new HistoryWindow(store);
   overlay.onClick(() => history.toggle());
+  tray = createTray({
+    onHistory: () => history.toggle(),
+    onSetup: () => void import('./setup-window').then((m) => m.openSetupWindow({ store, apiKeys, dataDir: dir })),
+  });
 
   const { wireSession } = await import('./session-controller');
   const checkPermissions = await wireSession({ store, apiKeys, overlay, recorder, dataDir: dir });
