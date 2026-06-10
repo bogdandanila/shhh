@@ -1,0 +1,33 @@
+{
+  "name": "shhh",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Privacy-first hold-to-talk dictation for macOS",
+  "main": "dist/main/index.js",
+  "bin": { "shhh": "dist/cli/index.js" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.renderer.json && node scripts/copy-assets.mjs",
+    "test": "vitest run",
+    "start": "npm run build && electron .",
+    "rebuild:electron": "electron-rebuild -f -w better-sqlite3-multiple-ciphers,smart-whisper,uiohook-napi"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@breezystack/lamejs": "^1.2.7",
+    "@napi-rs/keyring": "^1.1.6",
+    "better-sqlite3-multiple-ciphers": "^11.5.0",
+    "commander": "^12.1.0",
+    "openai": "^4.77.0",
+    "smart-whisper": "^0.8.1",
+    "uiohook-napi": "^1.5.4",
+    "uuidv7": "^1.0.2"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.7.0",
+    "@types/node": "^22.10.0",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.8"
+  }
+}
