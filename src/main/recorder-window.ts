@@ -1,7 +1,8 @@
-import { BrowserWindow, ipcMain } from 'electron';
+import { BrowserWindow } from 'electron';
 import { join } from 'node:path';
 import { rendererDir } from './paths';
 import { AudioData } from '../shared/types';
+import type { IpcMainEvent } from 'electron';
 
 /** Hidden renderer that owns getUserMedia; kept warm for <50ms start. */
 export class RecorderWindow {
@@ -19,11 +20,16 @@ export class RecorderWindow {
 
   stop(): Promise<AudioData> {
     return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Recorder did not respond')), 5000);
-      ipcMain.once('rec:data', (_e, ab: ArrayBuffer) => {
+      const ipc = this.win.webContents.ipc;
+      const handler = (_e: IpcMainEvent, ab: ArrayBuffer) => {
         clearTimeout(timeout);
         resolve({ pcm: new Int16Array(ab), sampleRate: 16000 });
-      });
+      };
+      const timeout = setTimeout(() => {
+        ipc.removeListener('rec:data', handler);
+        reject(new Error('Recorder did not respond'));
+      }, 5000);
+      ipc.once('rec:data', handler);
       this.win.webContents.send('rec:cmd', 'stop');
     });
   }
