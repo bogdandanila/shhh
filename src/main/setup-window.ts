@@ -17,11 +17,22 @@ const LLM_CLOUD: LlmProvider[] = ['anthropic', 'openai'];
 
 export function openSetupWindow(deps: SetupDeps): void {
   if (!registered) {
-    ipcMain.handle('perm:status', () => checkPermissions());
+    let lastPerms: { microphone: boolean; accessibility: boolean } | null = null;
+    ipcMain.handle('perm:status', async () => {
+      const p = await checkPermissions();
+      // System permission dialogs/Settings trips bury accessory-app windows.
+      // The moment a grant lands, surface setup again so the user can continue.
+      const granted = lastPerms && ((p.microphone && !lastPerms.microphone) || (p.accessibility && !lastPerms.accessibility));
+      lastPerms = p;
+      if (granted && win && !win.isDestroyed()) {
+        app.focus({ steal: true });
+        win.focus();
+      }
+      return p;
+    });
     ipcMain.handle('perm:request', async (_e, which) => {
       await requestPermission(which);
-      // Dismissing the system mic dialog drops accessory-app windows behind
-      // everything — bring setup back so the user can continue.
+      // The mic dialog resolves right here (no Settings round-trip) — refocus immediately.
       if (which === 'microphone' && win && !win.isDestroyed()) {
         app.focus({ steal: true });
         win.focus();
