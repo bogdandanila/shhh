@@ -2,10 +2,11 @@ appId: dev.bogdan.shhh
 productName: shhh
 directories: { output: release }
 files: ["dist/**/*", "package.json"]
+afterPack: scripts/adhoc-sign.cjs # identity:null leaves the bundle seal broken; TCC needs a valid (ad-hoc) signature or permission grants never stick
 mac:
   target: [{ target: zip, arch: universal }]
   category: public.app-category.productivity
-  identity: null            # unsigned (ad-hoc) — npm-first distribution, no Apple Developer account
+  identity: null            # no Apple Developer account — afterPack ad-hoc signs instead
   extendInfo:
     NSMicrophoneUsageDescription: "shhh records audio only while you hold the dictation key."
     LSUIElement: true       # background app — no dock icon
