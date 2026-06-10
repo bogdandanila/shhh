@@ -12,12 +12,19 @@ export class KeyListener {
   private down = false;
   private started = false;
 
-  constructor(private hotkeyCode: number, private onDown: () => void, private onUp: () => void) {}
+  constructor(
+    private hotkeyCode: number,
+    private onDown: () => void,
+    private onUp: () => void,
+    // Any delivered event proves Input Monitoring is granted, even if it isn't the hotkey.
+    private onAnyKeyEvent?: () => void,
+  ) {}
 
   start(): void {
     if (this.started) return;
     uIOhook.on('keydown', (e) => {
       if (process.env.SHHH_KEY_DEBUG) console.log('keydown', e.keycode);
+      this.onAnyKeyEvent?.();
       if (e.keycode === this.hotkeyCode && !this.down) { this.down = true; this.onDown(); }
     });
     uIOhook.on('keyup', (e) => {

@@ -26,7 +26,6 @@ export async function wireSession(w: Wiring): Promise<() => Promise<PermissionSt
   let busy = false;
 
   const onDown = (): void => {
-    markInputMonitoringWorking();
     if (busy) return;
     if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
     const max = w.store.getSettings().maxRecordingMs;
@@ -74,7 +73,7 @@ export async function wireSession(w: Wiring): Promise<() => Promise<PermissionSt
   };
 
   const settings = w.store.getSettings();
-  const listener = new KeyListener(resolveHotkeyCode(settings.hotkey), onDown, () => void onUp());
+  const listener = new KeyListener(resolveHotkeyCode(settings.hotkey), onDown, () => void onUp(), markInputMonitoringWorking);
   listener.start();
 
   const perms = await checkPermissions();
