@@ -77,6 +77,21 @@ export function buildProgram(io: CliIo): Command {
   program.command('nuke').action(async () => { await io.rpc('nuke', {}); io.print('All shhh data wiped.'); });
   program.command('setup').action(async () => { await io.rpc('setup.open', {}); io.print('Setup window opened.'); });
 
+  program.command('install').description('Download and install shhh.app').action(async () => {
+    const { installApp } = await import('./install');
+    await installApp(io.print);
+  });
+  program.command('update').description('Update shhh.app and re-run permission setup').action(async () => {
+    const { installApp } = await import('./install');
+    await installApp(io.print);
+    await io.rpc('setup.open', {}).catch(() => io.print('Start the app and run `shhh setup` to re-grant permissions.'));
+  });
+  program.command('start').action(async () => { await io.rpc('status', {}); io.print('running'); });
+  program.command('stop').action(async () => {
+    const { execFileSync } = await import('node:child_process');
+    execFileSync('pkill', ['-x', 'shhh']); io.print('stopped');
+  });
+
   return program;
 }
 
