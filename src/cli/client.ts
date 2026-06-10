@@ -31,13 +31,15 @@ export function promptHidden(question: string): Promise<string> {
     let value = '';
     const onData = (ch: Buffer) => {
       const c = ch.toString('utf8');
-      if (c === '\r' || c === '\n') {
+      if (c === '\x03') process.exit(1);
+      if (c === '\x7f') { value = value.slice(0, -1); return; }
+      const term = c.search(/[\r\n]/);
+      if (term >= 0) {
+        value += c.slice(0, term);
         stdin.setRawMode?.(false); stdin.pause(); stdin.off('data', onData);
         process.stdout.write('\n');
         resolve(value);
-      } else if (c === '\x03') { process.exit(1); }            // Ctrl-C
-      else if (c === '\x7f') { value = value.slice(0, -1); }   // backspace
-      else { value += c; }
+      } else { value += c; }
     };
     stdin.on('data', onData);
   });

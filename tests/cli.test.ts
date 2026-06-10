@@ -39,7 +39,18 @@ test('history list prints entries; history copy puts text on clipboard', async (
   expect(io.copyToClipboard).toHaveBeenCalledWith('Hello world.');
 });
 
-test('prompt set reads stdin/file content via promptHidden-free path', async () => {
+test('prompt reset forwards to RPC', async () => {
   const { rpc } = await run(['prompt', 'reset']);
   expect(rpc).toHaveBeenCalledWith('prompt.reset', {});
+});
+
+test('prompt set from file forwards file content to RPC', async () => {
+  const { writeFileSync, mkdtempSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const { tmpdir } = await import('node:os');
+  const tmpDir = mkdtempSync(join(tmpdir(), 'shhh-test-'));
+  const tmpfile = join(tmpDir, 'prompt.txt');
+  writeFileSync(tmpfile, 'My custom prompt');
+  const { rpc } = await run(['prompt', 'set', tmpfile]);
+  expect(rpc).toHaveBeenCalledWith('prompt.set', { prompt: 'My custom prompt' });
 });

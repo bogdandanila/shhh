@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { Command } from 'commander';
+import { Command, CommanderError } from 'commander';
 import { readFileSync } from 'node:fs';
 import { rpc as realRpc, promptHidden as realPromptHidden, copyToClipboard as realCopy, DATA_DIR } from './client';
 
@@ -83,6 +83,10 @@ export function buildProgram(io: CliIo): Command {
 /* c8 ignore start — wired only when run as a binary */
 if (require.main === module) {
   const io: CliIo = { rpc: realRpc, print: console.log, promptHidden: realPromptHidden, copyToClipboard: realCopy };
-  buildProgram(io).parseAsync(process.argv).catch((e) => { console.error(String(e.message ?? e)); process.exit(1); });
+  buildProgram(io).parseAsync(process.argv).catch((e) => {
+    if (e instanceof CommanderError) process.exit(e.exitCode);
+    console.error(String(e.message ?? e));
+    process.exit(1);
+  });
 }
 /* c8 ignore stop */
