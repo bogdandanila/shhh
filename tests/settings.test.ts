@@ -18,6 +18,11 @@ test('formatDuration round-trips', () => {
   expect(formatDuration(600_000)).toBe('10m');
 });
 
+test('formatDuration falls back to ms for non-exact values', () => {
+  expect(formatDuration(500)).toBe('500ms');
+  expect(formatDuration(90_000)).toBe('90s');
+});
+
 describe('defaults', () => {
   test('providers default to unset/none per spec', () => {
     expect(DEFAULT_SETTINGS.sttProvider).toBe('unset');
