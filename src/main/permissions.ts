@@ -21,6 +21,7 @@ export async function checkPermissions(): Promise<PermissionStatus> {
 
 export async function requestPermission(which: keyof typeof PANES): Promise<void> {
   if (which === 'microphone') { await systemPreferences.askForMediaAccess('microphone'); return; }
+  // isTrustedAccessibilityClient(true) triggers the system prompt; the deep link below opens the exact Settings pane
   if (which === 'accessibility') { systemPreferences.isTrustedAccessibilityClient(true); }
   await shell.openExternal(PANES[which]);
 }

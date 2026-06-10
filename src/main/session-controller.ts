@@ -20,18 +20,20 @@ interface Wiring {
 const MIN_RECORDING_MS = 300; // discard accidental taps
 
 export async function wireSession(w: Wiring): Promise<() => Promise<PermissionStatus>> {
-  let recordingStart = 0;
+  let recordingStart: number | null = null;
   let ticker: ReturnType<typeof setInterval> | null = null;
+  let hideTimer: ReturnType<typeof setTimeout> | null = null;
   let busy = false;
 
   const onDown = (): void => {
     markInputMonitoringWorking();
     if (busy) return;
+    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
     const max = w.store.getSettings().maxRecordingMs;
     recordingStart = Date.now();
     w.recorder.start();
     ticker = setInterval(() => {
-      const elapsedMs = Date.now() - recordingStart;
+      const elapsedMs = Date.now() - recordingStart!;
       w.overlay.setState({ kind: 'listening', elapsedMs, level: 0, warning: max - elapsedMs < 30_000 });
       if (elapsedMs >= max) void onUp(); // graceful cap: stop and process, never discard
     }, 250);
@@ -40,8 +42,10 @@ export async function wireSession(w: Wiring): Promise<() => Promise<PermissionSt
 
   const onUp = async (): Promise<void> => {
     if (ticker) { clearInterval(ticker); ticker = null; }
+    if (recordingStart === null) return;
     if (busy) return;
     const elapsed = Date.now() - recordingStart;
+    recordingStart = null;
     if (elapsed < MIN_RECORDING_MS) {
       try { await w.recorder.stop(); } catch { /* nothing recorded */ }
       w.overlay.setState({ kind: 'hidden' });
@@ -65,7 +69,7 @@ export async function wireSession(w: Wiring): Promise<() => Promise<PermissionSt
       w.overlay.setState({ kind: 'error', message: e instanceof Error ? e.message : 'Unexpected error' });
     } finally {
       busy = false;
-      setTimeout(() => w.overlay.setState({ kind: 'hidden' }), 2500);
+      hideTimer = setTimeout(() => { w.overlay.setState({ kind: 'hidden' }); hideTimer = null; }, 2500);
     }
   };
 
