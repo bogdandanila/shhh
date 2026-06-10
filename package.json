@@ -9,7 +9,8 @@
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.renderer.json && node scripts/copy-assets.mjs",
     "test": "vitest run",
     "start": "npm run build && electron .",
-    "rebuild:electron": "electron-rebuild -f -w better-sqlite3-multiple-ciphers,smart-whisper,uiohook-napi"
+    "rebuild:electron": "electron-rebuild -f -w better-sqlite3-multiple-ciphers,smart-whisper,uiohook-napi",
+    "rebuild:node": "npm rebuild better-sqlite3-multiple-ciphers smart-whisper uiohook-napi"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
