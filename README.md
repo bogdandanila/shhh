@@ -63,6 +63,10 @@ then reopen the app and grant permissions normally. (Recent shhh builds detect t
 
 **"shhh is damaged / cannot be verified"** on first open — same cause, same fix as above. This is Gatekeeper reacting to an unsigned quarantined app.
 
+**No mic icon in the menu bar** — on notched MacBooks, macOS pushes new menu-bar items into the notch dead zone when the bar is full; the icon is there but invisible. Free up space (⌘-drag unused icons off the bar, trim items in System Settings → Control Center, or use a menu-bar manager like Ice/Bartender) and it slides into view.
+
+**Holding the hotkey does nothing after an update** — each release is re-signed, which invalidates the Input Monitoring grant. The setup window reopens to walk you through it: toggle shhh **off and on** in System Settings → Input Monitoring, restart shhh, press any key to verify.
+
 ### Updating
 
 Repeat the download/install steps with the new version's zip. Because the app's (ad-hoc) signature changes with each release, macOS treats an update as a new app, so expect two one-time prompts:
