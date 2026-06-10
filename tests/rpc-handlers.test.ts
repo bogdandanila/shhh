@@ -77,3 +77,15 @@ test('nuke wipes settings, history, and keys', async () => {
   expect(deps.apiKeys.providersWithKeys()).toEqual([]);
   expect(await h['history.list']({ limit: 5 })).toEqual([]);
 });
+
+test('nuke hard-deletes history rows (not just tombstones) and resets hotkey/maxRecordingMs to defaults', async () => {
+  await h['config.set']({ key: 'hotkey', value: '99' });
+  await h['config.set']({ key: 'max-recording', value: '30m' });
+  deps.store.insertHistory({ rawText: 'x', formattedText: 'x', sttProvider: '', sttModel: '', llmProvider: 'none', llmModel: '', durationMs: 1, unformatted: true });
+  await h.nuke({});
+  const settings = deps.store.getSettings();
+  expect(settings.hotkey).toBe('fn');
+  expect(settings.maxRecordingMs).toBe(600_000);
+  // history rows physically deleted
+  expect(deps.store.countAllForTest()).toBe(0);
+});

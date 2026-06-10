@@ -102,8 +102,11 @@ export function buildHandlers(deps: HandlerDeps): Handlers {
     },
     nuke: async () => {
       for (const p of apiKeys.providersWithKeys()) apiKeys.delete(p);
-      store.clearHistory();
-      store.patchSettings({ sttProvider: 'unset', sttModel: '', llmProvider: 'none', llmModel: '', systemPrompt: DEFAULT_SYSTEM_PROMPT });
+      store.wipeHistory();
+      store.patchSettings({
+        sttProvider: 'unset', sttModel: '', llmProvider: 'none', llmModel: '', systemPrompt: DEFAULT_SYSTEM_PROMPT,
+        hotkey: 'fn', maxRecordingMs: 600_000, historyRetentionMs: null, loginLaunch: false,
+      });
       return 'ok';
     },
   };

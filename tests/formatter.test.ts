@@ -1,5 +1,5 @@
 import { expect, test, vi } from 'vitest';
-import { Formatter, isSaneOutput, runFormatter } from '../src/core/formatter';
+import { Formatter, isSaneOutput, runFormatter, formatterTimeoutMs } from '../src/core/formatter';
 
 const raw = 'um so this is like a test of the the dictation system';
 
@@ -37,4 +37,18 @@ test('insane output (empty / wild length) falls back to raw', async () => {
   const r = await runFormatter({ format }, raw);
   expect(format).toHaveBeenCalledTimes(2);
   expect(r).toEqual({ text: raw, unformatted: true });
+});
+
+test('formatterTimeoutMs: 15s baseline for empty input', () => {
+  expect(formatterTimeoutMs(0)).toBe(15_000);
+});
+
+test('formatterTimeoutMs: 25s for 5000-char input', () => {
+  expect(formatterTimeoutMs(5000)).toBe(25_000);
+});
+
+test('formatter that never resolves times out and falls back to raw', async () => {
+  const neverResolves: Formatter = { format: () => new Promise(() => {}) };
+  const r = await runFormatter(neverResolves, 'hello', () => 10);
+  expect(r).toEqual({ text: 'hello', unformatted: true });
 });

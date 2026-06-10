@@ -91,6 +91,13 @@ export function buildProgram(io: CliIo): Command {
     const { execFileSync } = await import('node:child_process');
     execFileSync('pkill', ['-x', 'shhh']); io.print('stopped');
   });
+  program.command('restart').action(async () => {
+    const { execFileSync, execFile } = await import('node:child_process');
+    try { execFileSync('pkill', ['-x', 'shhh']); } catch { /* not running */ }
+    await new Promise((r) => setTimeout(r, 500));
+    execFile('open', ['-g', '/Applications/shhh.app']);
+    io.print('restarted');
+  });
 
   return program;
 }

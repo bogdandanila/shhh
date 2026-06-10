@@ -100,4 +100,23 @@ describe('ShhhStore', () => {
     expect(s.getHistoryById('00000000-0000-0000-0000-000000000000')).toBeNull();
     s.close();
   });
+
+  test('wipeHistory physically deletes all rows including tombstones', () => {
+    const s = new ShhhStore(join(dir(), 'db'), key());
+    s.insertHistory({ rawText: 'a', formattedText: 'A.', sttProvider: 'local', sttModel: '', llmProvider: 'none', llmModel: '', durationMs: 1, unformatted: true });
+    s.insertHistory({ rawText: 'b', formattedText: 'B.', sttProvider: 'local', sttModel: '', llmProvider: 'none', llmModel: '', durationMs: 1, unformatted: true });
+    // tombstone one row so it won't appear in listHistory
+    s.clearHistory();
+    // countAllForTest should still see 2 (tombstoned rows exist)
+    expect(s.countAllForTest()).toBe(2);
+    // now physically wipe
+    s.wipeHistory();
+    expect(s.countAllForTest()).toBe(0);
+    // and listHistory is also empty
+    expect(s.listHistory({ limit: 10 })).toHaveLength(0);
+    // inserting after wipe: only the new row
+    s.insertHistory({ rawText: 'new', formattedText: 'New.', sttProvider: 'local', sttModel: '', llmProvider: 'none', llmModel: '', durationMs: 1, unformatted: false });
+    expect(s.countAllForTest()).toBe(1);
+    s.close();
+  });
 });

@@ -32,9 +32,11 @@ export async function runDictationCycle(audio: AudioData, deps: PipelineDeps): P
   const { text, unformatted } = await runFormatter(deps.formatter, raw);
   const pasted = await deps.paste(text);
 
+  const durationMs = Math.round((audio.pcm.length / audio.sampleRate) * 1000);
+  audio.pcm.fill(0); // spec: audio is memory-only and zeroed after transcription
   deps.saveHistory({
     rawText: raw, formattedText: text, unformatted,
-    durationMs: Math.round((audio.pcm.length / audio.sampleRate) * 1000),
+    durationMs,
     sttProvider: deps.meta.sttProvider, sttModel: deps.meta.sttModel,
     llmProvider: unformatted ? 'none' : deps.meta.llmProvider,
     llmModel: unformatted ? '' : deps.meta.llmModel,

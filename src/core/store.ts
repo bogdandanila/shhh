@@ -117,9 +117,20 @@ export class ShhhStore {
     this.db.prepare('UPDATE history SET deleted_at=?, updated_at=? WHERE deleted_at IS NULL AND created_at < ?').run(now, now, cutoff);
   }
 
+  /** Physically deletes all history rows (incl. tombstones). Used by nuke — not by routine clears, which tombstone for sync-readiness. */
+  wipeHistory(): void {
+    this.db.prepare('DELETE FROM history').run();
+  }
+
   /** test-only helper */
   backdateForTest(id: string, createdAt: string): void {
     this.db.prepare('UPDATE history SET created_at=? WHERE id=?').run(createdAt, id);
+  }
+
+  /** test-only helper — returns total row count regardless of tombstone status */
+  countAllForTest(): number {
+    const row = this.db.prepare('SELECT COUNT(*) as n FROM history').get() as { n: number };
+    return row.n;
   }
 
   close(): void { this.db.close(); }
