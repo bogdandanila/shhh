@@ -69,7 +69,9 @@ export function buildHandlers(deps: HandlerDeps): Handlers {
     'config.get': async (params) => {
       const { key } = (params ?? {}) as { key?: string };
       const view = configView(store.getSettings());
-      return key ? { [key]: view[key] } : view;
+      if (!key) return view;
+      if (!(key in setters)) throw new Error(`Unknown config key: ${key}`);
+      return { [key]: view[key] ?? '' };
     },
     'prompt.get': async () => store.getSettings().systemPrompt,
     'prompt.set': async (params) => { store.patchSettings({ systemPrompt: (params as { prompt: string }).prompt }); return 'ok'; },

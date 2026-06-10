@@ -63,18 +63,23 @@ export function rpcCall(socketPath: string, method: string, params?: unknown, ti
     const sock = createConnection(socketPath);
     const timer = setTimeout(() => { sock.destroy(); reject(new Error('RPC timeout')); }, timeoutMs);
     let buf = '';
+    let settled = false;
     sock.on('connect', () => sock.write(JSON.stringify({ id, method, params } satisfies RpcRequest) + '\n'));
     sock.on('data', (chunk) => {
       buf += chunk.toString('utf8');
       const nl = buf.indexOf('\n');
       if (nl < 0) return;
       clearTimeout(timer);
+      settled = true;
       sock.end();
       try {
         const res = JSON.parse(buf.slice(0, nl)) as RpcResponse;
         if (res.error) reject(new Error(res.error)); else resolve(res.result);
       } catch (e) { reject(e); }
     });
-    sock.on('error', (e) => { clearTimeout(timer); reject(e); });
+    sock.on('close', () => {
+      if (!settled) { clearTimeout(timer); reject(new Error('Connection closed before response')); }
+    });
+    sock.on('error', () => { if (settled) return; /* let close event reject */ });
   });
 }

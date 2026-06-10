@@ -61,6 +61,15 @@ test('status and doctor report configuration state', async () => {
   expect(doc).toMatchObject({ microphone: true, accessibility: false });
 });
 
+test('config.get rejects unknown keys', async () => {
+  await expect(h['config.get']({ key: 'bogus' })).rejects.toThrow(/unknown config key/i);
+});
+
+test('config.get returns empty string for known key with no value set (e.g. api key)', async () => {
+  const result = (await h['config.get']({ key: 'openai.api-key' })) as Record<string, string>;
+  expect(result['openai.api-key']).toBe('');
+});
+
 test('nuke wipes settings, history, and keys', async () => {
   deps.apiKeys.set('anthropic', 'k');
   deps.store.insertHistory({ rawText: 'x', formattedText: 'x', sttProvider: '', sttModel: '', llmProvider: 'none', llmModel: '', durationMs: 1, unformatted: true });
