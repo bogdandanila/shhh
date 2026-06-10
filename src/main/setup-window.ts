@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { BrowserWindow, ipcMain } from 'electron';
 import { join } from 'node:path';
 import { rendererDir } from './paths';
 import { checkPermissions, requestPermission } from './permissions';
@@ -19,7 +19,6 @@ export function openSetupWindow(deps: SetupDeps): void {
   if (!registered) {
     ipcMain.handle('perm:status', () => checkPermissions());
     ipcMain.handle('perm:request', (_e, which) => requestPermission(which));
-    ipcMain.handle('app:restart', () => { app.relaunch(); app.exit(0); });
 
     ipcMain.handle('stt:status', () => {
       const s = deps.store.getSettings();

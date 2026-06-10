@@ -1,0 +1,14 @@
+{
+  "name": "keymon",
+  "version": "0.1.0",
+  "description": "Minimal NSEvent global key monitor for shhh — needs only the Accessibility permission",
+  "main": "index.js",
+  "license": "MIT",
+  "gypfile": true,
+  "scripts": {
+    "install": "node-gyp rebuild"
+  },
+  "dependencies": {
+    "node-addon-api": "^8.3.0"
+  }
+}

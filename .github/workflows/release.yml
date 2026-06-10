@@ -11,11 +11,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
+      # node-gyp needs distutils, removed from Python 3.12 — setuptools restores it.
+      # Must come before npm ci: the keymon native addon compiles at install time.
+      - run: python3 -m pip install --break-system-packages setuptools || python3 -m pip install setuptools
       - run: npm ci
       - run: npm test
       - run: npm run build
-      # node-gyp needs distutils, removed from Python 3.12 — setuptools restores it
-      - run: python3 -m pip install --break-system-packages setuptools || python3 -m pip install setuptools
       - run: npx electron-builder --mac --publish never
       - name: checksums
         run: cd release && shasum -a 256 *.zip > checksums.txt

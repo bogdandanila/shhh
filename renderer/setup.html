@@ -13,12 +13,11 @@
   .err { color: #c00; min-height: 1.2em; margin: 4px 0 0; font-size: 12px; }
   .note { color: #888; font-size: 12px; }
   #hint { color: #666; min-height: 2.6em; margin: 12px 0 0; }
-  #restart, #done { width: 100%; padding: 10px; display: none; }
+  #done { width: 100%; padding: 10px; display: none; }
 </style></head>
 <body>
   <h3>1. Permissions</h3>
   <div class="perm" data-k="microphone"><span class="state">⬜</span> 🎤 Microphone <button>Request</button></div>
-  <div class="perm" data-k="inputMonitoring"><span class="state">⬜</span> ⌨️ Input Monitoring <button>Open Settings</button></div>
   <div class="perm" data-k="accessibility"><span class="state">⬜</span> ♿ Accessibility <button>Open Settings</button></div>
 
   <h3 style="margin-top:20px">2. Speech-to-text</h3>
@@ -54,7 +53,6 @@
   <div id="llm-error" class="err"></div>
 
   <p id="hint"></p>
-  <button id="restart">Restart shhh</button>
   <button id="done">Done</button>
   <script type="module" src="setup.js"></script>
 </body></html>

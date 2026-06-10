@@ -28,13 +28,13 @@ describe('ShhhStore', () => {
     const d = join(dir(), 'db');
     const k = key();
     const s1 = new ShhhStore(d, k);
-    expect(s1.getFlag('inputMonitoringSeen')).toBe(false);
-    s1.setFlag('inputMonitoringSeen', true);
-    expect(s1.getFlag('inputMonitoringSeen')).toBe(true);
+    expect(s1.getFlag('exampleFlag')).toBe(false);
+    s1.setFlag('exampleFlag', true);
+    expect(s1.getFlag('exampleFlag')).toBe(true);
     s1.close();
     const s2 = new ShhhStore(d, k);
-    expect(s2.getFlag('inputMonitoringSeen')).toBe(true);
-    expect('flag:inputMonitoringSeen' in s2.getSettings()).toBe(false);
+    expect(s2.getFlag('exampleFlag')).toBe(true);
+    expect('flag:exampleFlag' in s2.getSettings()).toBe(false);
     s2.close();
   });
 

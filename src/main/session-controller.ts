@@ -1,13 +1,13 @@
-import { app, clipboard } from 'electron';
+import { clipboard, systemPreferences } from 'electron';
 import { ShhhStore } from '../core/store';
 import { ApiKeyStore } from '../core/api-keys';
 import { runDictationCycle } from '../core/pipeline';
 import { buildTranscriber } from '../core/transcriber/factory';
 import { buildFormatter } from '../core/formatter/factory';
 import { PermissionStatus } from '../core/rpc-handlers';
-import { KeyListener, resolveHotkeyCode } from './key-listener';
+import { DEFAULT_HOTKEY, KeyListener, resolveHotkeyCode } from './key-listener';
 import { pasteWithClipboard } from './paster';
-import { checkPermissions, initInputMonitoring, markInputMonitoringWorking, allGranted } from './permissions';
+import { checkPermissions, allGranted } from './permissions';
 import { openSetupWindow } from './setup-window';
 import { OverlayWindow } from './overlay-window';
 import { RecorderWindow } from './recorder-window';
@@ -73,12 +73,24 @@ export async function wireSession(w: Wiring): Promise<() => Promise<PermissionSt
   };
 
   const settings = w.store.getSettings();
-  // Version-scoped: each release re-signs the bundle (ad-hoc), which invalidates the
-  // TCC Input Monitoring grant — a cached "verified" from an older build would mask it.
-  const imFlag = `inputMonitoringSeen:${app.getVersion()}`;
-  initInputMonitoring(w.store.getFlag(imFlag), () => w.store.setFlag(imFlag, true));
-  const listener = new KeyListener(resolveHotkeyCode(settings.hotkey), onDown, () => void onUp(), markInputMonitoringWorking);
-  listener.start();
+  let hotkeyCode: number;
+  try {
+    hotkeyCode = resolveHotkeyCode(settings.hotkey);
+  } catch (e) {
+    console.warn(`${e instanceof Error ? e.message : e} — falling back to ${DEFAULT_HOTKEY}`);
+    hotkeyCode = resolveHotkeyCode(DEFAULT_HOTKEY);
+  }
+  const listener = new KeyListener(hotkeyCode, onDown, () => void onUp());
+  // NSEvent monitors installed before Accessibility is granted never fire, so
+  // install the moment the app becomes trusted — no restart needed.
+  const startWhenTrusted = (): boolean => {
+    if (!systemPreferences.isTrustedAccessibilityClient(false)) return false;
+    listener.start();
+    return true;
+  };
+  if (!startWhenTrusted()) {
+    const poll = setInterval(() => { if (startWhenTrusted()) clearInterval(poll); }, 2000);
+  }
 
   const perms = await checkPermissions();
   const sttReady = buildTranscriber(settings, w.apiKeys, w.dataDir) !== null;

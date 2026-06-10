@@ -26,12 +26,10 @@ async function refreshPerms(): Promise<boolean> {
     (el.querySelector('button') as HTMLButtonElement).style.visibility = ok ? 'hidden' : 'visible';
   });
   const hint = $('hint');
-  const restart = $<HTMLButtonElement>('restart');
   const done = $<HTMLButtonElement>('done');
-  if (st.microphone && st.accessibility && st.inputMonitoring) {
-    restart.style.display = 'none';
+  if (st.microphone && st.accessibility) {
     if (sttConfigured) {
-      hint.textContent = 'All set — hold right ⌘ to dictate. Formatting is optional; add it now or any time later.';
+      hint.textContent = 'All set — hold fn (🌐) to dictate. Formatting is optional; add it now or any time later.';
       done.style.display = 'block';
     } else {
       hint.textContent = 'Permissions done — now choose how speech gets transcribed.';
@@ -40,15 +38,7 @@ async function refreshPerms(): Promise<boolean> {
     return true;
   }
   done.style.display = 'none';
-  if (st.microphone && st.accessibility) {
-    // Input Monitoring has no query API: it verifies the first time a key event arrives.
-    // A tap opened before the grant stays dead, so a restart may be needed to rebind it.
-    restart.style.display = 'block';
-    hint.textContent = 'Enable Input Monitoring in Settings, then press any key to verify. If the box stays unchecked, restart shhh.';
-  } else {
-    restart.style.display = 'none';
-    hint.textContent = '';
-  }
+  hint.textContent = '';
   return false;
 }
 
@@ -174,7 +164,6 @@ $('llm-off').addEventListener('click', () => void (async () => {
 document.querySelectorAll<HTMLElement>('.perm button').forEach((btn) => {
   btn.addEventListener('click', () => void shhh.invoke('perm:request', btn.parentElement!.dataset.k));
 });
-$('restart').addEventListener('click', () => void shhh.invoke('app:restart'));
 $('done').addEventListener('click', () => window.close());
 
 shhh.on('stt:progress', (pct) => { $<HTMLProgressElement>('local-prog').value = pct as number; });

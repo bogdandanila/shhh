@@ -6,7 +6,7 @@ Hold a key, speak, release — your words appear in whatever app you're typing i
 
 ## How it works
 
-1. **Hold right ⌘** anywhere on your Mac and speak. A small overlay shows that shhh is listening (up to 10 minutes per dictation, configurable).
+1. **Hold fn (🌐)** anywhere on your Mac and speak. A small overlay shows that shhh is listening (up to 10 minutes per dictation, configurable).
 2. Release the key. Your speech is transcribed — **locally via Whisper** (nothing leaves your Mac) or via a cloud STT provider of your choice (OpenAI, Groq, Deepgram) with **your own API key**.
 3. Optionally, an LLM pass (Anthropic or OpenAI, your key) strips filler words ("uhm…"), fixes punctuation, and tidies sentences.
 4. The result is pasted into the focused input of whatever app you're in. Your previous clipboard contents are restored.
@@ -29,7 +29,7 @@ A 🤫 icon in the menu bar gives you dictation history (searchable, click-to-co
 
 ```sh
 curl -L -o /tmp/shhh.zip \
-  https://github.com/bogdandanila/shhh/releases/latest/download/shhh-0.1.4-universal-mac.zip
+  https://github.com/bogdandanila/shhh/releases/latest/download/shhh-0.2.0-universal-mac.zip
 curl -sL https://github.com/bogdandanila/shhh/releases/latest/download/checksums.txt
 shasum -a 256 /tmp/shhh.zip   # must match the line printed above
 ```
@@ -43,11 +43,13 @@ open /Applications/shhh.app
 
 **3. First-run setup** — a setup window opens automatically:
 
-1. **Permissions** — grant Microphone (system prompt), then Input Monitoring and Accessibility (buttons open the right System Settings panes; toggle shhh on). Press any key to verify Input Monitoring — if the checkbox stays unchecked, hit *Restart shhh* once.
+1. **Permissions** — grant Microphone (system prompt) and Accessibility (button opens the right System Settings pane; toggle shhh on). Both apply live — no restart.
 2. **Speech-to-text** — pick **Local Whisper** (recommended: `base.en`, a 142 MB one-time download, fully offline) or a cloud provider with your API key.
 3. **Formatting** *(optional)* — add an Anthropic or OpenAI key to get filler-word removal and punctuation cleanup. Skip it and shhh pastes raw transcriptions.
 
-**4. Dictate:** put your cursor in any text field, **hold right ⌘**, speak, release. Done.
+**4. Dictate:** put your cursor in any text field, **hold fn (🌐)**, speak, release. Done.
+
+> Tip: a quick *tap* of fn still does whatever System Settings → Keyboard → "Press 🌐 key to" says (e.g. switch language). Holding to dictate doesn't trigger it.
 
 If the app ever feels stuck: the 🤫 menu-bar icon has Settings and Quit, and the setup window can always be reopened from there.
 
@@ -65,13 +67,13 @@ then reopen the app and grant permissions normally. (Recent shhh builds detect t
 
 **No mic icon in the menu bar** — on notched MacBooks, macOS pushes new menu-bar items into the notch dead zone when the bar is full; the icon is there but invisible. Free up space (⌘-drag unused icons off the bar, trim items in System Settings → Control Center, or use a menu-bar manager like Ice/Bartender) and it slides into view.
 
-**Holding the hotkey does nothing after an update** — each release is re-signed, which invalidates the Input Monitoring grant. The setup window reopens to walk you through it: toggle shhh **off and on** in System Settings → Input Monitoring, restart shhh, press any key to verify.
+**Holding the hotkey does nothing after an update** — each release is re-signed, which invalidates the Accessibility grant. The setup window reopens: toggle shhh **off and on** in System Settings → Accessibility. It applies live — no restart.
 
 ### Updating
 
 Repeat the download/install steps with the new version's zip. Because the app's (ad-hoc) signature changes with each release, macOS treats an update as a new app, so expect two one-time prompts:
 
-- the setup window reopens to re-grant Input Monitoring and Accessibility (~30 seconds);
+- the setup window reopens to re-grant Accessibility (toggle shhh off and on in System Settings — applies live, ~15 seconds);
 - Keychain asks for your password to let shhh read **"shhh Safe Storage"** — that item protects the encryption key for your local history database. Enter your password and click *Always Allow*.
 
 Both go away permanently if/when shhh ships with an Apple Developer certificate.
@@ -91,7 +93,7 @@ Highlights:
 ```sh
 shhh status                        # what's configured, is the app running
 shhh doctor                        # permission + config health check
-shhh config set hotkey ralt        # rcmd (default), lcmd, ralt, lalt, … or a raw keycode
+shhh config set hotkey rcmd        # fn (default), rcmd, lalt, … — modifier keys only
 shhh config set max-recording 10m  # dictation safety cap
 shhh model download base.en        # fetch a local Whisper model (sha256-verified)
 shhh prompt edit                   # customize the formatting system prompt

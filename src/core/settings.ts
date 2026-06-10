@@ -27,7 +27,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sttModel: '',
   llmProvider: 'none',
   llmModel: '',
-  hotkey: 'rcmd',
+  hotkey: 'fn',
   maxRecordingMs: 600_000,
   historyRetentionMs: null,
   loginLaunch: false,

@@ -6,7 +6,7 @@ import { DEFAULT_SYSTEM_PROMPT } from './formatter/default-prompt';
 import { Handlers } from './rpc';
 import { isModelPresent } from './models';
 
-export interface PermissionStatus { microphone: boolean; accessibility: boolean; inputMonitoring: boolean }
+export interface PermissionStatus { microphone: boolean; accessibility: boolean }
 
 export interface HandlerDeps {
   store: ShhhStore;
@@ -105,7 +105,7 @@ export function buildHandlers(deps: HandlerDeps): Handlers {
       store.wipeHistory();
       store.patchSettings({
         sttProvider: 'unset', sttModel: '', llmProvider: 'none', llmModel: '', systemPrompt: DEFAULT_SYSTEM_PROMPT,
-        hotkey: 'rcmd', maxRecordingMs: 600_000, historyRetentionMs: null, loginLaunch: false,
+        hotkey: 'fn', maxRecordingMs: 600_000, historyRetentionMs: null, loginLaunch: false,
       });
       return 'ok';
     },
