@@ -1,0 +1,68 @@
+import { Mp3Encoder } from '@breezystack/lamejs';
+
+export function pcmToWav(pcm: Int16Array, sampleRate: number): Buffer {
+  const dataLen = pcm.length * 2;
+  const buf = Buffer.alloc(44 + dataLen);
+  buf.write('RIFF', 0); buf.writeUInt32LE(36 + dataLen, 4); buf.write('WAVE', 8);
+  buf.write('fmt ', 12); buf.writeUInt32LE(16, 16); buf.writeUInt16LE(1, 20); // PCM
+  buf.writeUInt16LE(1, 22);                       // mono
+  buf.writeUInt32LE(sampleRate, 24);
+  buf.writeUInt32LE(sampleRate * 2, 28);          // byte rate
+  buf.writeUInt16LE(2, 32); buf.writeUInt16LE(16, 34);
+  buf.write('data', 36); buf.writeUInt32LE(dataLen, 40);
+  Buffer.from(pcm.buffer, pcm.byteOffset, dataLen).copy(buf, 44);
+  return buf;
+}
+
+export function pcmToMp3(pcm: Int16Array, sampleRate: number, kbps = 32): Buffer {
+  const enc = new Mp3Encoder(1, sampleRate, kbps);
+  const chunks: Buffer[] = [];
+  for (let i = 0; i < pcm.length; i += 1152) {
+    const out = enc.encodeBuffer(pcm.subarray(i, i + 1152));
+    if (out.length) chunks.push(Buffer.from(out.buffer, out.byteOffset, out.byteLength));
+  }
+  const tail = enc.flush();
+  if (tail.length) chunks.push(Buffer.from(tail.buffer, tail.byteOffset, tail.byteLength));
+  return Buffer.concat(chunks);
+}
+
+/** Split PCM at the quietest 100ms window near each required cut point. */
+export function splitOnSilence(
+  pcm: Int16Array, sampleRate: number, opts: { maxPartSamples: number },
+): Int16Array[] {
+  if (pcm.length <= opts.maxPartSamples) return [pcm];
+  const win = Math.floor(sampleRate / 10); // 100ms
+  const parts: Int16Array[] = [];
+  let start = 0;
+  while (pcm.length - start > opts.maxPartSamples) {
+    const idealCut = start + opts.maxPartSamples;
+    // search ±10% around the ideal cut for the quietest window
+    const radius = Math.floor(opts.maxPartSamples * 0.1);
+    let bestAt = idealCut, bestEnergy = Infinity;
+    for (let at = Math.max(start + win, idealCut - radius); at <= Math.min(pcm.length - win, idealCut); at += win) {
+      let e = 0;
+      for (let i = at; i < at + win; i++) e += Math.abs(pcm[i]);
+      if (e < bestEnergy) { bestEnergy = e; bestAt = at; }
+    }
+    parts.push(pcm.subarray(start, bestAt));
+    start = bestAt;
+  }
+  parts.push(pcm.subarray(start));
+  return parts;
+}
+
+export interface UploadPart { data: Buffer; mime: string; filename: string }
+
+/** WAV when it fits the provider limit; otherwise MP3, chunked on silence if still too big. */
+export function prepareUploads(pcm: Int16Array, sampleRate: number, maxBytes: number): UploadPart[] {
+  const wav = pcmToWav(pcm, sampleRate);
+  if (wav.length <= maxBytes) return [{ data: wav, mime: 'audio/wav', filename: 'audio.wav' }];
+  const mp3 = pcmToMp3(pcm, sampleRate);
+  if (mp3.length <= maxBytes) return [{ data: mp3, mime: 'audio/mpeg', filename: 'audio.mp3' }];
+  // mp3 bytes scale ~linearly with samples; chunk PCM so each part encodes under the limit
+  const ratio = mp3.length / pcm.length;
+  const maxPartSamples = Math.floor((maxBytes * 0.9) / ratio);
+  return splitOnSilence(pcm, sampleRate, { maxPartSamples }).map((p, i) => ({
+    data: pcmToMp3(p, sampleRate), mime: 'audio/mpeg', filename: `audio-${i}.mp3`,
+  }));
+}
