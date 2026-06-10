@@ -51,6 +51,18 @@ open /Applications/shhh.app
 
 If the app ever feels stuck: the 🤫 menu-bar icon has Settings and Quit, and the setup window can always be reopened from there.
 
+### Troubleshooting
+
+**macOS keeps asking for Microphone (or other permissions) on every launch** — the app is quarantined, which happens when the zip was downloaded with a browser instead of `curl`. macOS then runs it from a randomized path, so permission grants never stick. Fix once:
+
+```sh
+sudo xattr -dr com.apple.quarantine /Applications/shhh.app
+```
+
+then reopen the app and grant permissions normally. (Recent shhh builds detect this and show the same instruction.)
+
+**"shhh is damaged / cannot be verified"** on first open — same cause, same fix as above. This is Gatekeeper reacting to an unsigned quarantined app.
+
 ### Updating
 
 Repeat the download/install steps with the new version's zip. macOS resets permission grants for unsigned apps on update, so the setup window will reopen — re-toggle Input Monitoring and Accessibility, ~30 seconds.

@@ -1,4 +1,4 @@
-import { app, safeStorage } from 'electron';
+import { app, dialog, safeStorage } from 'electron';
 import { join } from 'node:path';
 import { dataDir, socketPath } from './paths';
 import { loadOrCreateDbKey, StringEncryptor } from '../core/db-key';
@@ -17,6 +17,17 @@ if (!app.requestSingleInstanceLock()) app.quit();
 app.dock?.hide(); // background app: no dock icon
 
 app.whenReady().then(async () => {
+  // Quarantined apps run from a randomized read-only path, so TCC re-asks for
+  // every permission on every launch — explain the one-time fix instead of looping.
+  if (process.execPath.includes('/AppTranslocation/')) {
+    dialog.showMessageBoxSync({
+      type: 'error', title: 'shhh', message: 'macOS is running shhh from a quarantined location',
+      detail: 'Permission grants cannot stick this way (the mic prompt would return forever).\n\n'
+        + 'Fix it once in Terminal:\n\nsudo xattr -dr com.apple.quarantine /Applications/shhh.app\n\nthen reopen shhh.',
+    });
+    app.exit(1);
+    return;
+  }
   const dir = dataDir();
   const enc: StringEncryptor = {
     encrypt: (s) => safeStorage.encryptString(s),
