@@ -24,6 +24,20 @@ describe('ShhhStore', () => {
     s.close();
   });
 
+  test('flags default false, persist across reopen, and stay out of Settings', () => {
+    const d = join(dir(), 'db');
+    const k = key();
+    const s1 = new ShhhStore(d, k);
+    expect(s1.getFlag('inputMonitoringSeen')).toBe(false);
+    s1.setFlag('inputMonitoringSeen', true);
+    expect(s1.getFlag('inputMonitoringSeen')).toBe(true);
+    s1.close();
+    const s2 = new ShhhStore(d, k);
+    expect(s2.getFlag('inputMonitoringSeen')).toBe(true);
+    expect('flag:inputMonitoringSeen' in s2.getSettings()).toBe(false);
+    s2.close();
+  });
+
   test('history insert/list, search, tombstone clear', () => {
     const s = new ShhhStore(join(dir(), 'db'), key());
     s.insertHistory({ rawText: 'um hello world', formattedText: 'Hello world.', sttProvider: 'local', sttModel: 'base.en', llmProvider: 'anthropic', llmModel: 'claude-haiku-4-5', durationMs: 1200, unformatted: false });

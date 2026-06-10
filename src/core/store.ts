@@ -63,6 +63,15 @@ export class ShhhStore {
     tx();
   }
 
+  /** Internal boolean flags (`flag:` namespace) — not part of Settings, never surfaced via the config CLI. */
+  getFlag(key: string): boolean {
+    return this.rawGet(`flag:${key}`) === 'true';
+  }
+
+  setFlag(key: string, value: boolean): void {
+    this.rawSet(`flag:${key}`, JSON.stringify(value));
+  }
+
   insertHistory(e: NewHistoryEntry): HistoryEntry {
     const now = new Date().toISOString();
     const entry: HistoryEntry = {

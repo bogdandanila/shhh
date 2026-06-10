@@ -3,13 +3,15 @@
   body { font: 14px -apple-system, sans-serif; margin: 24px; }
   .perm { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid #eee; }
   .perm button { margin-left: auto; }
-  #restart { margin-top: 16px; width: 100%; padding: 10px; display: none; }
+  #hint { color: #666; min-height: 2.6em; margin: 12px 0 0; }
+  #restart { width: 100%; padding: 10px; display: none; }
 </style></head>
 <body>
   <h3>shhh needs three permissions</h3>
   <div class="perm" data-k="microphone"><span class="state">⬜</span> 🎤 Microphone <button>Request</button></div>
   <div class="perm" data-k="inputMonitoring"><span class="state">⬜</span> ⌨️ Input Monitoring <button>Open Settings</button></div>
   <div class="perm" data-k="accessibility"><span class="state">⬜</span> ♿ Accessibility <button>Open Settings</button></div>
-  <button id="restart">All set — Restart shhh</button>
+  <p id="hint"></p>
+  <button id="restart">Restart shhh</button>
   <script type="module" src="setup.js"></script>
 </body></html>

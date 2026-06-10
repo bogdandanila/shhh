@@ -7,7 +7,7 @@ import { buildFormatter } from '../core/formatter/factory';
 import { PermissionStatus } from '../core/rpc-handlers';
 import { KeyListener, resolveHotkeyCode } from './key-listener';
 import { pasteWithClipboard } from './paster';
-import { checkPermissions, markInputMonitoringWorking, allGranted } from './permissions';
+import { checkPermissions, initInputMonitoring, markInputMonitoringWorking, allGranted } from './permissions';
 import { openSetupWindow } from './setup-window';
 import { OverlayWindow } from './overlay-window';
 import { RecorderWindow } from './recorder-window';
@@ -73,6 +73,7 @@ export async function wireSession(w: Wiring): Promise<() => Promise<PermissionSt
   };
 
   const settings = w.store.getSettings();
+  initInputMonitoring(w.store.getFlag('inputMonitoringSeen'), () => w.store.setFlag('inputMonitoringSeen', true));
   const listener = new KeyListener(resolveHotkeyCode(settings.hotkey), onDown, () => void onUp(), markInputMonitoringWorking);
   listener.start();
 

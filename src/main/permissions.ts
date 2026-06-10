@@ -7,8 +7,21 @@ const PANES = {
   microphone: 'x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone',
 } as const;
 
+// Verified-once state survives restarts via the store; a revoked grant just means
+// the hotkey goes dead (macOS offers no query API for Input Monitoring to do better).
 let inputMonitoringSeen = false;
-export function markInputMonitoringWorking(): void { inputMonitoringSeen = true; }
+let persistSeen: (() => void) | null = null;
+
+export function initInputMonitoring(seen: boolean, persist: () => void): void {
+  inputMonitoringSeen = seen;
+  persistSeen = persist;
+}
+
+export function markInputMonitoringWorking(): void {
+  if (inputMonitoringSeen) return;
+  inputMonitoringSeen = true;
+  persistSeen?.();
+}
 
 export async function checkPermissions(): Promise<PermissionStatus> {
   return {
