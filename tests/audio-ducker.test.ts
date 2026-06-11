@@ -77,3 +77,24 @@ test('quick tap: restore queued behind an in-flight duck still restores', async 
   await Promise.all([duckP, restoreP]);
   expect(calls).toEqual(['get volume settings', 'set volume output volume 20', 'set volume output volume 64']);
 });
+
+test('failed set during duck clears state: restore no-ops, retry duck re-reads', async () => {
+  const calls: string[] = [];
+  let failSet = true;
+  const exec = vi.fn(async (script: string): Promise<string> => {
+    calls.push(script);
+    if (script === 'get volume settings') return SETTINGS_REPLY;
+    if (failSet) throw new Error('set failed');
+    return '';
+  });
+  const d = new AudioDucker(exec);
+  await d.duck();             // get + set (set fails, state cleared)
+  await d.restore();          // no-op — nothing remembered
+  expect(calls).toEqual(['get volume settings', 'set volume output volume 20']);
+  failSet = false;
+  await d.duck();             // re-reads and ducks cleanly
+  expect(calls).toEqual([
+    'get volume settings', 'set volume output volume 20',
+    'get volume settings', 'set volume output volume 20',
+  ]);
+});

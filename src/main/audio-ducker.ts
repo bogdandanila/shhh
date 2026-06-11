@@ -6,7 +6,7 @@ const DUCK_LEVEL = 20;
 
 function defaultOsaExec(script: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    execFile('osascript', ['-e', script], (err, stdout) => (err ? reject(err) : resolve(stdout)));
+    execFile('osascript', ['-e', script], { timeout: 3000 }, (err, stdout) => (err ? reject(err) : resolve(stdout)));
   });
 }
 
