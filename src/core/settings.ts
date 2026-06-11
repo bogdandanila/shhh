@@ -31,6 +31,7 @@ export const DEFAULT_SETTINGS: Settings = {
   maxRecordingMs: 600_000,
   historyRetentionMs: null,
   loginLaunch: false,
+  duckAudio: true,
   systemPrompt: DEFAULT_SYSTEM_PROMPT,
   deviceId: '',
 };

@@ -78,6 +78,21 @@ test('nuke wipes settings, history, and keys', async () => {
   expect(await h['history.list']({ limit: 5 })).toEqual([]);
 });
 
+test('config.set/get round-trips duck-audio as on/off', async () => {
+  const before = (await h['config.get']({ key: 'duck-audio' })) as Record<string, string>;
+  expect(before['duck-audio']).toBe('on'); // default
+  await h['config.set']({ key: 'duck-audio', value: 'off' });
+  expect(deps.store.getSettings().duckAudio).toBe(false);
+  const after = (await h['config.get']({ key: 'duck-audio' })) as Record<string, string>;
+  expect(after['duck-audio']).toBe('off');
+});
+
+test('nuke resets duckAudio to default (on)', async () => {
+  await h['config.set']({ key: 'duck-audio', value: 'off' });
+  await h.nuke({});
+  expect(deps.store.getSettings().duckAudio).toBe(true);
+});
+
 test('nuke hard-deletes history rows (not just tombstones) and resets hotkey/maxRecordingMs to defaults', async () => {
   await h['config.set']({ key: 'hotkey', value: '99' });
   await h['config.set']({ key: 'max-recording', value: '30m' });

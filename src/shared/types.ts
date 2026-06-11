@@ -10,6 +10,7 @@ export interface Settings {
   maxRecordingMs: number;
   historyRetentionMs: number | null;  // null = keep forever
   loginLaunch: boolean;
+  duckAudio: boolean;          // lower system volume while recording
   systemPrompt: string;
   deviceId: string;
 }

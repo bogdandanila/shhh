@@ -30,6 +30,7 @@ describe('defaults', () => {
     expect(DEFAULT_SETTINGS.maxRecordingMs).toBe(600_000);
     expect(DEFAULT_SETTINGS.hotkey).toBe('fn');
     expect(DEFAULT_SETTINGS.systemPrompt.length).toBeGreaterThan(50);
+    expect(DEFAULT_SETTINGS.duckAudio).toBe(true);
   });
 });
 

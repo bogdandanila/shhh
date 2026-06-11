@@ -37,6 +37,7 @@ export function buildHandlers(deps: HandlerDeps): Handlers {
     'max-recording': (v) => store.patchSettings({ maxRecordingMs: parseDuration(v) }),
     'history-retention': (v) => store.patchSettings({ historyRetentionMs: v === 'off' ? null : parseDuration(v) }),
     'login-launch': (v) => store.patchSettings({ loginLaunch: v === 'on' }),
+    'duck-audio': (v) => store.patchSettings({ duckAudio: v === 'on' }),
   };
   for (const p of KEY_PROVIDERS) {
     setters[`${p}.api-key`] = (v) => apiKeys.set(p, v);
@@ -50,6 +51,7 @@ export function buildHandlers(deps: HandlerDeps): Handlers {
       'max-recording': formatDuration(s.maxRecordingMs),
       'history-retention': s.historyRetentionMs === null ? 'off' : formatDuration(s.historyRetentionMs),
       'login-launch': s.loginLaunch ? 'on' : 'off',
+      'duck-audio': s.duckAudio ? 'on' : 'off',
     };
     for (const p of KEY_PROVIDERS) {
       const k = apiKeys.get(p);
@@ -105,7 +107,7 @@ export function buildHandlers(deps: HandlerDeps): Handlers {
       store.wipeHistory();
       store.patchSettings({
         sttProvider: 'unset', sttModel: '', llmProvider: 'none', llmModel: '', systemPrompt: DEFAULT_SYSTEM_PROMPT,
-        hotkey: 'fn', maxRecordingMs: 600_000, historyRetentionMs: null, loginLaunch: false,
+        hotkey: 'fn', maxRecordingMs: 600_000, historyRetentionMs: null, loginLaunch: false, duckAudio: true,
       });
       return 'ok';
     },
