@@ -70,7 +70,7 @@ keystroke function). All I/O is injected.
 dialog "updates require the installed app") → `checkForUpdate` → dialogs
 (`dialog.showMessageBox`, works without windows in this LSUIElement app):
 
-- Up to date → "shhh X.Y.Z is the latest version."
+- Up to date → "You're up to date (latest release: X.Y.Z, you have X.Y.Z)."
 - Update found → "shhh A.B.C is available (you have X.Y.Z). Install and
   relaunch?" [Install / Cancel]
 - Install → download zip + checksums to a fresh `mkdtemp` dir → verify →
