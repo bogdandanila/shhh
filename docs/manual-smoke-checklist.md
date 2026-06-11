@@ -23,3 +23,10 @@ Run on a real Mac before tagging a release. Items 1–6 are also the Task 15 ver
 - [ ] Quick-tap fn (<300ms) while music plays — volume returns (no stuck duck).
 - [ ] Mute output, hold fn — volume/mute untouched on release.
 - [ ] `shhh config set duck-audio off`, hold fn — volume untouched. Set back `on`.
+
+## Check for Updates
+
+- [ ] On the latest released version: tray → Check for Updates… — "is the latest version" dialog.
+- [ ] Dev build (`npm start`) with a newer release published: dialog says updating requires the installed build; nothing is modified.
+- [ ] Installed build with a newer release published: Install and Relaunch downloads, swaps `/Applications/shhh.app`, relaunches on the new version (Setup may reopen for the Accessibility re-grant — expected with ad-hoc signing).
+- [ ] Double-click Check for Updates… rapidly — only one dialog appears (reentrancy guard).

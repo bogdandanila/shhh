@@ -47,6 +47,7 @@ app.whenReady().then(async () => {
     tray = createTray({
       onHistory: () => history.toggle(),
       onSetup: () => void import('./setup-window').then((m) => m.openSetupWindow({ store, apiKeys, dataDir: dir })),
+      onCheckUpdates: () => void import('./update-flow').then((m) => m.runUpdateFlow()),
     });
   } catch (e) {
     // A missing menu-bar icon must never take the hotkey/RPC wiring down with it.
