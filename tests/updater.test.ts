@@ -56,6 +56,16 @@ describe('parseLatestRelease', () => {
   test('throws on garbage payloads', () => {
     expect(() => parseLatestRelease(null)).toThrow(/Unexpected GitHub release response/);
   });
+  test('zipName is always a bare filename', () => {
+    const payload = {
+      tag_name: 'v0.3.0',
+      assets: [
+        { name: 'checksums.txt', browser_download_url: 'x' },
+        { name: 'weird/../shhh-0.3.0-universal-mac.zip', browser_download_url: 'x' },
+      ],
+    };
+    expect(parseLatestRelease(payload).zipName).toBe('shhh-0.3.0-universal-mac.zip');
+  });
 });
 
 describe('parseChecksums', () => {
@@ -132,6 +142,7 @@ describe('installUpdate', () => {
     );
     expect(calls).toEqual([
       ['ditto', '-xk', zipPath, join(dir, 'ex')],
+      ['rm', '-rf', '/Applications/shhh.app.old'],
       ['mv', '/Applications/shhh.app', '/Applications/shhh.app.old'],
       ['ditto', join(dir, 'ex', 'shhh.app'), '/Applications/shhh.app'],
       ['rm', '-rf', '/Applications/shhh.app.old'],
@@ -168,10 +179,38 @@ describe('installUpdate', () => {
     )).rejects.toThrow('disk full');
     expect(calls).toEqual([
       ['ditto', '-xk', zipPath, join(dir, 'ex')],
+      ['rm', '-rf', '/Applications/shhh.app.old'],
       ['mv', '/Applications/shhh.app', '/Applications/shhh.app.old'],
       ['ditto', join(dir, 'ex', 'shhh.app'), '/Applications/shhh.app'],
       ['rm', '-rf', '/Applications/shhh.app'],
       ['mv', '/Applications/shhh.app.old', '/Applications/shhh.app'],
     ]);
+  });
+
+  test('final cleanup failure does not mask a successful install', async () => {
+    const { dir, zipPath, calls } = setup();
+    let rmCount = 0;
+    const exec = async (cmd: string, args: string[]) => {
+      calls.push([cmd, ...args]);
+      if (cmd === 'rm' && ++rmCount === 2) throw new Error('rm wedged');
+    };
+    await installUpdate(
+      { zipPath, sha256: 'x', extractDir: join(dir, 'ex'), appPath: '/Applications/shhh.app' },
+      { exec, verify: () => true, exists: () => true },
+    );
+    expect(calls.at(-1)).toEqual(['rm', '-rf', '/Applications/shhh.app.old']);
+  });
+
+  test('rollback failure reports both errors and the backup location', async () => {
+    const { dir, zipPath, calls } = setup();
+    const exec = async (cmd: string, args: string[]) => {
+      calls.push([cmd, ...args]);
+      if (cmd === 'ditto' && args[0] !== '-xk') throw new Error('disk full');
+      if (cmd === 'mv' && args[0] === '/Applications/shhh.app.old') throw new Error('mv wedged');
+    };
+    await expect(installUpdate(
+      { zipPath, sha256: 'x', extractDir: join(dir, 'ex'), appPath: '/Applications/shhh.app' },
+      { exec, verify: () => true, exists: () => true },
+    )).rejects.toThrow(/disk full.+rollback also failed.+mv wedged.+shhh\.app\.old/s);
   });
 });

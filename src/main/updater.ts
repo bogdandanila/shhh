@@ -53,7 +53,7 @@ export function parseLatestRelease(json: unknown): ReleaseInfo {
   if (!zip || !sums) throw new Error('Latest release is missing expected assets');
   return {
     version: rel.tag_name.replace(/^v/, ''),
-    zipName: zip.name,
+    zipName: basename(zip.name),
     zipUrl: zip.browser_download_url,
     checksumsUrl: sums.browser_download_url,
   };
@@ -100,7 +100,9 @@ export async function downloadFile(url: string, dest: string, fetchFn: FetchLike
 
 export function defaultExec(cmd: string, args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
-    execFile(cmd, args, (err) => (err ? reject(err) : resolve()));
+    // Generous: ditto on a ~200MB bundle is legitimately slow, but a wedged
+    // process must not hold the update flow's reentrancy guard forever.
+    execFile(cmd, args, { timeout: 300_000 }, (err) => (err ? reject(err) : resolve()));
   });
 }
 
@@ -109,6 +111,8 @@ export interface InstallDeps {
   verify?: (file: string, sha256: string) => boolean;  // defaults to core/models.verifyChecksum
   exists?: (path: string) => boolean;                  // defaults to fs.existsSync
 }
+
+const errMsg = (e: unknown): string => (e instanceof Error ? e.message : String(e));
 
 /**
  * Verify → extract → swap, with rollback. The running app survives the swap
@@ -126,13 +130,23 @@ export async function installUpdate(
   const newApp = join(opts.extractDir, 'shhh.app');
   if (!exists(newApp)) throw new Error('Update zip did not contain shhh.app');
   const backup = `${opts.appPath}.old`;
+  await deps.exec('rm', ['-rf', backup]); // a stale backup from a previous failed run would corrupt the mv-aside
   await deps.exec('mv', [opts.appPath, backup]);
   try {
     await deps.exec('ditto', [newApp, opts.appPath]);
-  } catch (e) {
-    await deps.exec('rm', ['-rf', opts.appPath]);   // clear any partial copy
-    await deps.exec('mv', [backup, opts.appPath]);  // rollback
-    throw e;
+  } catch (copyErr) {
+    try {
+      await deps.exec('rm', ['-rf', opts.appPath]);   // clear any partial copy
+      await deps.exec('mv', [backup, opts.appPath]);  // rollback
+    } catch (rollbackErr) {
+      throw new Error(
+        `Update failed (${errMsg(copyErr)}); automatic rollback also failed (${errMsg(rollbackErr)}). `
+        + `Your previous version is intact at ${backup}.`,
+      );
+    }
+    throw copyErr;
   }
-  await deps.exec('rm', ['-rf', backup]);
+  try {
+    await deps.exec('rm', ['-rf', backup]);
+  } catch { /* best-effort — the install succeeded; a stale .old is pre-cleaned on the next run */ }
 }
