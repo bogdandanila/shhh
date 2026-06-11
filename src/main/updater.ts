@@ -1,4 +1,9 @@
-import { basename, dirname } from 'node:path';
+import { execFile } from 'node:child_process';
+import { createWriteStream, existsSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import { verifyChecksum } from '../core/models';
 
 /**
  * Electron-free update logic (testable; the dialog/relaunch glue lives in
@@ -70,4 +75,64 @@ export function bundlePathFromExecPath(execPath: string): string | null {
   const bundle = dirname(contents);
   if (basename(macos) !== 'MacOS' || basename(contents) !== 'Contents' || !bundle.endsWith('.app')) return null;
   return bundle;
+}
+
+export type FetchLike = (url: string) => Promise<Response>;
+export type ExecLike = (cmd: string, args: string[]) => Promise<void>;
+
+const LATEST_RELEASE_URL = `https://api.github.com/repos/${REPO}/releases/latest`;
+
+/** Fetches the latest release and compares against the running version. Throws on network/API errors. */
+export async function checkForUpdate(currentVersion: string, fetchFn: FetchLike = fetch): Promise<UpdateCheck> {
+  const res = await fetchFn(LATEST_RELEASE_URL);
+  if (!res.ok) throw new Error(`GitHub API responded ${res.status}`);
+  const info = parseLatestRelease(await res.json());
+  if (compareVersions(info.version, currentVersion) <= 0) return { kind: 'up-to-date', latest: info.version };
+  return { kind: 'update', ...info };
+}
+
+/** Streams a URL to disk (same pattern as core/models.downloadModel). */
+export async function downloadFile(url: string, dest: string, fetchFn: FetchLike = fetch): Promise<void> {
+  const res = await fetchFn(url);
+  if (!res.ok || !res.body) throw new Error(`Download failed (${res.status})`);
+  await pipeline(Readable.fromWeb(res.body as never), createWriteStream(dest));
+}
+
+export function defaultExec(cmd: string, args: string[]): Promise<void> {
+  return new Promise((resolve, reject) => {
+    execFile(cmd, args, (err) => (err ? reject(err) : resolve()));
+  });
+}
+
+export interface InstallDeps {
+  exec: ExecLike;
+  verify?: (file: string, sha256: string) => boolean;  // defaults to core/models.verifyChecksum
+  exists?: (path: string) => boolean;                  // defaults to fs.existsSync
+}
+
+/**
+ * Verify → extract → swap, with rollback. The running app survives the swap
+ * (open inodes); the caller relaunches afterwards. ditto preserves the
+ * bundle's signature/xattrs and copies safely across volumes (tmp → /Applications).
+ */
+export async function installUpdate(
+  opts: { zipPath: string; sha256: string; extractDir: string; appPath: string },
+  deps: InstallDeps,
+): Promise<void> {
+  const verify = deps.verify ?? verifyChecksum;
+  const exists = deps.exists ?? existsSync;
+  if (!verify(opts.zipPath, opts.sha256)) throw new Error('Checksum mismatch — download corrupted');
+  await deps.exec('ditto', ['-xk', opts.zipPath, opts.extractDir]);
+  const newApp = join(opts.extractDir, 'shhh.app');
+  if (!exists(newApp)) throw new Error('Update zip did not contain shhh.app');
+  const backup = `${opts.appPath}.old`;
+  await deps.exec('mv', [opts.appPath, backup]);
+  try {
+    await deps.exec('ditto', [newApp, opts.appPath]);
+  } catch (e) {
+    await deps.exec('rm', ['-rf', opts.appPath]);   // clear any partial copy
+    await deps.exec('mv', [backup, opts.appPath]);  // rollback
+    throw e;
+  }
+  await deps.exec('rm', ['-rf', backup]);
 }
