@@ -95,6 +95,7 @@ shhh status                        # what's configured, is the app running
 shhh doctor                        # permission + config health check
 shhh config set hotkey rcmd        # fn (default), rcmd, lalt, … — modifier keys only
 shhh config set max-recording 10m  # dictation safety cap
+shhh config set duck-audio off     # don't lower system volume while recording (default: on)
 shhh model download base.en        # fetch a local Whisper model (sha256-verified)
 shhh prompt edit                   # customize the formatting system prompt
 shhh history list / search / copy  # dictation history from the terminal
