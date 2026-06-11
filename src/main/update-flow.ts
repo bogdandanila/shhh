@@ -16,10 +16,11 @@ export async function runUpdateFlow(): Promise<void> {
   let work: string | null = null;
   let installed = false;
   try {
+    app.focus({ steal: true }); // LSUIElement app: without this, dialogs open behind the active app
     const current = app.getVersion();
     const check = await checkForUpdate(current);
     if (check.kind === 'up-to-date') {
-      await dialog.showMessageBox({ type: 'info', message: `shhh ${current} is the latest version.` });
+      await dialog.showMessageBox({ type: 'info', message: `You're up to date (latest release: ${check.latest}, you have ${current}).` });
       return;
     }
     const appPath = app.isPackaged ? bundlePathFromExecPath(process.execPath) : null;
@@ -47,6 +48,8 @@ export async function runUpdateFlow(): Promise<void> {
     await installUpdate({ zipPath, sha256, extractDir: join(work, 'extract'), appPath }, { exec: defaultExec });
     installed = true;
   } catch (e) {
+    console.error('update flow failed:', e);
+    app.focus({ steal: true }); // LSUIElement app: without this, dialogs open behind the active app
     await dialog.showMessageBox({
       type: 'error', message: 'Update failed',
       detail: e instanceof Error ? e.message : String(e),
