@@ -18,9 +18,14 @@ export interface ReleaseInfo {
 
 export type UpdateCheck = { kind: 'up-to-date'; latest: string } | ({ kind: 'update' } & ReleaseInfo);
 
-/** Numeric dotted-version compare; tolerates a leading "v" and unequal lengths. Returns <0, 0, >0. */
+/**
+ * Numeric dotted-version compare; tolerates a leading "v" and unequal lengths.
+ * Prerelease/build suffixes are ignored ("0.3.0-beta.1" == "0.3.0") — releases
+ * come from /releases/latest, which excludes anything marked prerelease.
+ * Returns <0, 0, >0.
+ */
 export function compareVersions(a: string, b: string): number {
-  const parse = (s: string) => s.replace(/^v/, '').split('.').map((p) => Number.parseInt(p, 10) || 0);
+  const parse = (s: string) => s.replace(/^v/, '').split(/[-+]/)[0].split('.').map((p) => Number.parseInt(p, 10) || 0);
   const pa = parse(a), pb = parse(b);
   for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
     const d = (pa[i] ?? 0) - (pb[i] ?? 0);

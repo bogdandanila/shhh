@@ -25,6 +25,11 @@ describe('compareVersions', () => {
   test('malformed segments compare as 0', () => {
     expect(compareVersions('abc', '0.0.0')).toBe(0);
   });
+  test('ignores prerelease/build suffixes', () => {
+    expect(compareVersions('0.3.0-beta.1', '0.3.0')).toBe(0);
+    expect(compareVersions('0.3.0+build.5', '0.3.0')).toBe(0);
+    expect(compareVersions('v0.3.1-rc.1', '0.3.0')).toBeGreaterThan(0);
+  });
 });
 
 describe('parseLatestRelease', () => {
@@ -67,5 +72,9 @@ describe('bundlePathFromExecPath', () => {
   });
   test('returns null for a bare executable path', () => {
     expect(bundlePathFromExecPath('/usr/local/bin/node')).toBeNull();
+  });
+  test('dev Electron binary IS inside a bundle — dev mode is guarded by app.isPackaged, not here', () => {
+    expect(bundlePathFromExecPath('/p/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron'))
+      .toBe('/p/node_modules/electron/dist/Electron.app');
   });
 });

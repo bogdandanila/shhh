@@ -136,8 +136,9 @@ mismatch aborts with an error dialog and nothing is touched.
     missing zip asset; missing checksums asset.
   - `parseChecksums`: real shasum line; multiple lines; missing filename.
   - `checkForUpdate`: up-to-date, update available, HTTP error throws.
-  - `bundlePathFromExecPath`: packaged path → `.app` root; non-bundle
-    (dev electron binary) → null.
+  - `bundlePathFromExecPath`: packaged path → `.app` root; bare
+    (non-bundle) executable → null; dev Electron binary → its Electron.app
+    (dev mode is guarded by `app.isPackaged`, not here).
   - `installUpdate`: happy-path exec call sequence; rollback sequence when
     the copy step fails; abort (no mv) when `shhh.app` missing from zip.
 - Manual smoke checklist: up-to-date dialog on current version; dev-mode
