@@ -16,3 +16,10 @@ Run on a real Mac before tagging a release. Items 1–6 are also the Task 15 ver
 12. **Permission revocation**: revoke Accessibility in System Settings → hotkey stops; re-grant → works again without app restart; `shhh doctor` reflects it.
 13. **Install flow** (post-release): `npm i -g` the CLI tarball, `shhh install` downloads, verifies checksum, app launches from /Applications without Gatekeeper dialog.
 14. **Update flow**: `shhh update` → app replaced → setup window re-opens for permission re-grant.
+
+## Audio ducking
+
+- [ ] Play music. Hold fn — system volume drops to ~20. Release — volume returns to the previous level while transcription is still running.
+- [ ] Quick-tap fn (<300ms) while music plays — volume returns (no stuck duck).
+- [ ] Mute output, hold fn — volume/mute untouched on release.
+- [ ] `shhh config set duck-audio off`, hold fn — volume untouched. Set back `on`.

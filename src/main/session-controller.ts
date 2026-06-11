@@ -6,6 +6,7 @@ import { buildTranscriber } from '../core/transcriber/factory';
 import { buildFormatter } from '../core/formatter/factory';
 import { PermissionStatus } from '../core/rpc-handlers';
 import { DEFAULT_HOTKEY, KeyListener, resolveHotkeyCode } from './key-listener';
+import { AudioDucker } from './audio-ducker';
 import { pasteWithClipboard } from './paster';
 import { checkPermissions, allGranted } from './permissions';
 import { openSetupWindow } from './setup-window';
@@ -20,6 +21,7 @@ interface Wiring {
 const MIN_RECORDING_MS = 300; // discard accidental taps
 
 export async function wireSession(w: Wiring): Promise<() => Promise<PermissionStatus>> {
+  const ducker = new AudioDucker();
   let recordingStart: number | null = null;
   let ticker: ReturnType<typeof setInterval> | null = null;
   let hideTimer: ReturnType<typeof setTimeout> | null = null;
@@ -28,7 +30,9 @@ export async function wireSession(w: Wiring): Promise<() => Promise<PermissionSt
   const onDown = (): void => {
     if (busy) return;
     if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
-    const max = w.store.getSettings().maxRecordingMs;
+    const settings = w.store.getSettings();
+    if (settings.duckAudio) void ducker.duck();
+    const max = settings.maxRecordingMs;
     recordingStart = Date.now();
     w.recorder.start();
     ticker = setInterval(() => {
@@ -46,6 +50,7 @@ export async function wireSession(w: Wiring): Promise<() => Promise<PermissionSt
     const elapsed = Date.now() - recordingStart;
     recordingStart = null;
     if (elapsed < MIN_RECORDING_MS) {
+      void ducker.restore();
       try { await w.recorder.stop(); } catch { /* nothing recorded */ }
       w.overlay.setState({ kind: 'hidden' });
       return;
@@ -54,6 +59,7 @@ export async function wireSession(w: Wiring): Promise<() => Promise<PermissionSt
     w.overlay.setState({ kind: 'processing' });
     try {
       const audio = await w.recorder.stop();
+      void ducker.restore(); // audio captured — bring playback back while we transcribe
       const settings = w.store.getSettings();
       const result = await runDictationCycle(audio, {
         transcriber: buildTranscriber(settings, w.apiKeys, w.dataDir),
@@ -67,6 +73,7 @@ export async function wireSession(w: Wiring): Promise<() => Promise<PermissionSt
     } catch (e) {
       w.overlay.setState({ kind: 'error', message: e instanceof Error ? e.message : 'Unexpected error' });
     } finally {
+      void ducker.restore(); // safety net: no-op when already restored
       busy = false;
       hideTimer = setTimeout(() => { w.overlay.setState({ kind: 'hidden' }); hideTimer = null; }, 2500);
     }
