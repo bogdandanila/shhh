@@ -29,7 +29,7 @@ A 🤫 icon in the menu bar gives you dictation history (searchable, click-to-co
 
 ```sh
 curl -L -o /tmp/shhh.zip \
-  https://github.com/bogdandanila/shhh/releases/latest/download/shhh-0.2.2-universal-mac.zip
+  https://github.com/bogdandanila/shhh/releases/latest/download/shhh-0.3.0-universal-mac.zip
 curl -sL https://github.com/bogdandanila/shhh/releases/latest/download/checksums.txt
 shasum -a 256 /tmp/shhh.zip   # must match the line printed above
 ```
@@ -71,7 +71,7 @@ then reopen the app and grant permissions normally. (Recent shhh builds detect t
 
 ### Updating
 
-Repeat the download/install steps with the new version's zip. Because the app's (ad-hoc) signature changes with each release, macOS treats an update as a new app, so expect two one-time prompts:
+**🤫 menu → Check for Updates** — shhh downloads the new version, verifies its checksum, swaps itself, and relaunches. (Or repeat the download/install steps manually.) Because the app's (ad-hoc) signature changes with each release, macOS treats an update as a new app, so expect two one-time prompts after any update:
 
 - the setup window reopens to re-grant Accessibility (toggle shhh off and on in System Settings — applies live, ~15 seconds);
 - Keychain asks for your password to let shhh read **"shhh Safe Storage"** — that item protects the encryption key for your local history database. Enter your password and click *Always Allow*.
