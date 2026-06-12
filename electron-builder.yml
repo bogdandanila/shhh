@@ -4,6 +4,7 @@ directories: { output: release }
 files: ["dist/**/*", "package.json"]
 afterPack: scripts/adhoc-sign.cjs # identity:null leaves the bundle seal broken; TCC needs a valid (ad-hoc) signature or permission grants never stick
 mac:
+  icon: build/icon.icns # Noto Emoji 🤫 (Apache-2.0); regenerate from build/icon-source.png via sips+iconutil
   target: [{ target: zip, arch: universal }]
   category: public.app-category.productivity
   identity: null            # no Apple Developer account — afterPack ad-hoc signs instead
