@@ -17,24 +17,38 @@ export function formatterTimeoutMs(rawLength: number): number {
   return 15_000 + Math.ceil(rawLength / 500) * 1_000;
 }
 
+const dbg = (...a: unknown[]): void => { if (process.env.SHHH_DEBUG) console.log('[shhh:llm]', ...a); };
+
 /** One retry on failure/insanity, then fall back to raw — never lose the user's words. */
 export async function runFormatter(f: Formatter | null, raw: string, timeoutMsFn = formatterTimeoutMs): Promise<FormatResult> {
-  if (!f) return { text: raw, unformatted: true };
-  for (let attempt = 0; attempt < 2; attempt++) {
+  if (!f) {
+    dbg('no formatter configured — pasting raw transcription');
+    return { text: raw, unformatted: true };
+  }
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const started = Date.now();
     try {
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
+        dbg(`attempt ${attempt}/2 — in: ${raw.length} chars, timeout: ${timeoutMsFn(raw.length)}ms`);
         const out = await Promise.race([
           f.format(raw),
           new Promise<never>((_, rej) => {
             timer = setTimeout(() => rej(new Error('Formatter timeout')), timeoutMsFn(raw.length));
           }),
         ]);
-        if (isSaneOutput(raw, out)) return { text: out.trim(), unformatted: false };
+        if (isSaneOutput(raw, out)) {
+          dbg(`ok in ${Date.now() - started}ms — out: ${out.trim().length} chars`);
+          return { text: out.trim(), unformatted: false };
+        }
+        // Never silent: a discarded LLM response should be explainable after the fact.
+        console.warn(`[shhh:llm] attempt ${attempt}/2: output failed sanity check (in ${raw.length} chars → out ${out.trim().length}), ${attempt < 2 ? 'retrying' : 'falling back to raw'}`);
       } finally {
         clearTimeout(timer);
       }
-    } catch { /* retry, then fall back */ }
+    } catch (e) {
+      console.warn(`[shhh:llm] attempt ${attempt}/2 failed after ${Date.now() - started}ms: ${e instanceof Error ? e.message : e} — ${attempt < 2 ? 'retrying' : 'falling back to raw'}`);
+    }
   }
   return { text: raw, unformatted: true };
 }
