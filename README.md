@@ -29,7 +29,7 @@ A 🤫 icon in the menu bar gives you dictation history (searchable, click-to-co
 
 ```sh
 curl -L -o /tmp/shhh.zip \
-  https://github.com/bogdandanila/shhh/releases/latest/download/shhh-0.3.1-universal-mac.zip
+  https://github.com/bogdandanila/shhh/releases/latest/download/shhh-0.4.0-universal-mac.zip
 curl -sL https://github.com/bogdandanila/shhh/releases/latest/download/checksums.txt
 shasum -a 256 /tmp/shhh.zip   # must match the line printed above
 ```
