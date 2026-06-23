@@ -8,8 +8,7 @@ import { PermissionStatus } from '../core/rpc-handlers';
 import { DEFAULT_HOTKEY, KeyListener, resolveHotkeyCode } from './key-listener';
 import { AudioDucker } from './audio-ducker';
 import { pasteWithClipboard } from './paster';
-import { checkPermissions, allGranted } from './permissions';
-import { openSetupWindow } from './setup-window';
+import { checkPermissions } from './permissions';
 import { OverlayWindow } from './overlay-window';
 import { RecorderWindow } from './recorder-window';
 
@@ -20,7 +19,12 @@ interface Wiring {
 
 const MIN_RECORDING_MS = 300; // discard accidental taps
 
-export async function wireSession(w: Wiring): Promise<() => Promise<PermissionStatus>> {
+export interface SessionHandle {
+  checkPermissions: () => Promise<PermissionStatus>;
+  setHotkey: (hotkey: string) => void;
+}
+
+export async function wireSession(w: Wiring): Promise<SessionHandle> {
   const ducker = new AudioDucker();
   let recordingStart: number | null = null;
   let ticker: ReturnType<typeof setInterval> | null = null;
@@ -79,19 +83,26 @@ export async function wireSession(w: Wiring): Promise<() => Promise<PermissionSt
     }
   };
 
+  const buildListener = (hotkey: string): KeyListener => {
+    let code: number;
+    try {
+      code = resolveHotkeyCode(hotkey);
+    } catch (e) {
+      console.warn(`${e instanceof Error ? e.message : e} — falling back to ${DEFAULT_HOTKEY}`);
+      code = resolveHotkeyCode(DEFAULT_HOTKEY);
+    }
+    return new KeyListener(code, onDown, () => void onUp());
+  };
+
   const settings = w.store.getSettings();
-  let hotkeyCode: number;
-  try {
-    hotkeyCode = resolveHotkeyCode(settings.hotkey);
-  } catch (e) {
-    console.warn(`${e instanceof Error ? e.message : e} — falling back to ${DEFAULT_HOTKEY}`);
-    hotkeyCode = resolveHotkeyCode(DEFAULT_HOTKEY);
-  }
-  const listener = new KeyListener(hotkeyCode, onDown, () => void onUp());
+  let trusted = false;
+  let listener = buildListener(settings.hotkey);
+
   // NSEvent monitors installed before Accessibility is granted never fire, so
   // install the moment the app becomes trusted — no restart needed.
   const startWhenTrusted = (): boolean => {
     if (!systemPreferences.isTrustedAccessibilityClient(false)) return false;
+    trusted = true;
     listener.start();
     return true;
   };
@@ -99,9 +110,12 @@ export async function wireSession(w: Wiring): Promise<() => Promise<PermissionSt
     const poll = setInterval(() => { if (startWhenTrusted()) clearInterval(poll); }, 2000);
   }
 
-  const perms = await checkPermissions();
-  const sttReady = buildTranscriber(settings, w.apiKeys, w.dataDir) !== null;
-  if (!allGranted(perms) || !sttReady) openSetupWindow({ store: w.store, apiKeys: w.apiKeys, dataDir: w.dataDir });
+  // Rebind the hotkey at runtime when the user changes it in the UI.
+  const setHotkey = (hotkey: string): void => {
+    listener.stop();
+    listener = buildListener(hotkey);
+    if (trusted) listener.start();
+  };
 
-  return checkPermissions;
+  return { checkPermissions, setHotkey };
 }
